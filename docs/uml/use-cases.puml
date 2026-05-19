@@ -1,0 +1,81 @@
+@startuml use-cases
+' ============================================================
+'  Cell Simulation 2D - Use Case Diagram
+'  Improvements over Ryan's version:
+'   - Grouped by functional category
+'   - Added "Choose neighborhood mode" (required by spec)
+'   - Removed ambiguous "Modify cell"
+'   - Added <<include>> and <<extend>> relations
+' ============================================================
+
+skinparam usecase {
+  BackgroundColor #FAFBFC
+  BorderColor #2E3440
+  ArrowColor #2E3440
+}
+skinparam shadowing false
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageBorderColor #4C566A
+
+left to right direction
+
+actor "User" as user
+
+rectangle "Cell Simulation 2D" {
+
+  package "Simulation control" {
+    usecase "Start simulation"      as UC_Start
+    usecase "Pause simulation"      as UC_Pause
+    usecase "Run one step"          as UC_Step
+    usecase "Reset simulation"      as UC_Reset
+    usecase "Change speed"          as UC_Speed
+  }
+
+  package "Configuration" {
+    usecase "Choose grid settings"      as UC_Grid
+    usecase "Choose neighborhood mode"  as UC_Neighborhood
+    usecase "Adjust probabilities"      as UC_Probs
+  }
+
+  package "Cell management" {
+    usecase "Create cell"           as UC_Create
+    usecase "Remove cell"           as UC_Remove
+    usecase "Generate random cells" as UC_Random
+  }
+
+  package "Statistics" {
+    usecase "View statistics"       as UC_Stats
+    usecase "View graphs (live)"    as UC_Graphs
+  }
+
+  package "Persistence" {
+    usecase "Save simulation"       as UC_Save
+    usecase "Load simulation"       as UC_Load
+  }
+}
+
+' --- Relations ---
+user --> UC_Start
+user --> UC_Pause
+user --> UC_Step
+user --> UC_Reset
+user --> UC_Speed
+user --> UC_Grid
+user --> UC_Neighborhood
+user --> UC_Probs
+user --> UC_Create
+user --> UC_Remove
+user --> UC_Random
+user --> UC_Stats
+user --> UC_Save
+user --> UC_Load
+
+' Includes (one use case always triggers another)
+UC_Stats   ..> UC_Graphs   : <<include>>
+UC_Random  ..> UC_Create   : <<include>>
+
+' Extends (optional, triggered under condition)
+UC_Save    ..> UC_Pause    : <<extend>>
+UC_Load    ..> UC_Reset    : <<extend>>
+
+@enduml

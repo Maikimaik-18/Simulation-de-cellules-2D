@@ -1,0 +1,64 @@
+@startuml sequence-step
+' ============================================================
+'  Cell Simulation 2D - Sequence Diagram
+'  Scenario: One simulation tick (step) - the heart of the loop
+'  Simplified model: SIR + Deceased, no vaccination, no quarantine
+' ============================================================
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #2E3440
+  LifeLineBorderColor #4C566A
+  ParticipantBorderColor #2E3440
+  ParticipantBackgroundColor #FAFBFC
+}
+
+actor User
+participant "MainController" as Ctrl
+participant "SimulationEngine" as Engine
+participant "Grid" as Grid
+participant "Person" as Person
+participant "NeighborhoodStrategy" as Neighborhood
+participant "StatisticsService" as Stats
+
+User -> Ctrl : click "Play"
+Ctrl -> Engine : start()
+
+loop every tick (based on speed)
+    Engine -> Engine : step()
+    activate Engine
+
+    Engine -> Grid : getAllCells()
+    Grid --> Engine : List<Person>
+
+    loop for each Person
+        Engine -> Person : update(settings)
+        Person -> Person : if infected: infectionDays++\nthen try recovery / mortality
+
+        Engine -> Person : move(grid, neighborhood, settings)
+        Person -> Neighborhood : getNeighbors(grid, position)
+        Neighborhood --> Person : List<Position>
+        Person -> Grid : setCell(newPosition, this)
+
+        Engine -> Person : spread(grid, neighborhood, settings)
+        Person -> Neighborhood : getNeighbors(grid, position)
+        Neighborhood --> Person : List<Position>
+        Person -> Grid : getCell(neighborPos)
+        Grid --> Person : neighborPerson
+        Person -> Person : if neighbor susceptible:\ntry transmission
+    end
+
+    Engine -> Stats : onTick(grid, tickCount)
+    activate Stats
+    Stats -> Grid : iterate cells
+    Stats -> Stats : update countByState
+    Stats --> Engine
+    deactivate Stats
+
+    Engine --> Ctrl : notify UI update
+    deactivate Engine
+end
+
+Ctrl -> User : refresh canvas + charts
+
+@enduml

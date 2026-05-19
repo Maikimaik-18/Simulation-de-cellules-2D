@@ -1,0 +1,207 @@
+@startuml class-diagram
+' ============================================================
+'  Cell Simulation 2D - Class Diagram
+'  Theme: Disease propagation (simple SIR + Deceased)
+'  Scope: strictly what the spec requires, nothing more.
+' ============================================================
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam classBackgroundColor #FAFBFC
+skinparam classBorderColor #2E3440
+skinparam packageBackgroundColor #FFFFFF
+skinparam packageBorderColor #4C566A
+skinparam ArrowColor #2E3440
+skinparam linetype ortho
+
+' ============================================================
+'  UI LAYER
+' ============================================================
+package "com.cellsimulation.ui" {
+
+  class App {
+    + main(args: String[]) : void
+    + start(stage: Stage) : void
+  }
+
+  class MainController {
+    - engine : SimulationEngine
+    - statisticsService : StatisticsService
+    - saveService : SaveService
+    --
+    + initialize() : void
+    + handlePlay() : void
+    + handlePause() : void
+    + handleStep() : void
+    + handleReset() : void
+    + handleSave() : void
+    + handleLoad() : void
+    + handleSpeedChange(speed: int) : void
+    + handleNeighborhoodChange(mode: NeighborhoodStrategy) : void
+    + handleGridClick(position: Position) : void
+    + handleRandomFill(count: int) : void
+  }
+}
+
+' ============================================================
+'  MODEL LAYER
+' ============================================================
+package "com.cellsimulation.model" {
+
+  class SimulationEngine {
+    - grid : Grid
+    - settings : SimulationSettings
+    - neighborhood : NeighborhoodStrategy
+    - running : boolean
+    - tickCount : int
+    - listeners : List<SimulationListener>
+    --
+    + step() : void
+    + start() : void
+    + pause() : void
+    + reset() : void
+    + addCell(position: Position, state: DiseaseState) : void
+    + removeCell(position: Position) : void
+    + addListener(listener: SimulationListener) : void
+    + removeListener(listener: SimulationListener) : void
+  }
+
+  class Grid {
+    - width : int
+    - height : int
+    - toricMode : boolean
+    - cells : Person[][]
+    --
+    + getCell(position: Position) : Person
+    + setCell(position: Position, person: Person) : void
+    + removeCell(position: Position) : void
+    + isInside(position: Position) : boolean
+    + getEmptyNeighbors(position: Position, neighborhood: NeighborhoodStrategy) : List<Position>
+  }
+
+  class Person {
+    - state : DiseaseState
+    - position : Position
+    - infectionDays : int
+    - contagionRadius : int
+    --
+    + update(settings: SimulationSettings) : void
+    + move(grid: Grid, neighborhood: NeighborhoodStrategy, settings: SimulationSettings) : void
+    + spread(grid: Grid, neighborhood: NeighborhoodStrategy, settings: SimulationSettings) : void
+    + isDead() : boolean
+    + isInfected() : boolean
+  }
+
+  class Position <<value>> {
+    - row : int
+    - column : int
+    --
+    + getRow() : int
+    + getColumn() : int
+    + equals(obj: Object) : boolean
+    + hashCode() : int
+  }
+
+  class SimulationSettings {
+    - simulationSpeed : int
+    - transmissionProbability : double
+    - recoveryProbability : double
+    - mortalityProbability : double
+    - mobilityRate : double
+    - maxInfectionDays : int
+    --
+    + getters/setters
+  }
+
+  enum DiseaseState {
+    SUSCEPTIBLE
+    INFECTED
+    RECOVERED
+    DECEASED
+  }
+}
+
+' ============================================================
+'  NEIGHBORHOOD STRATEGY (Strategy pattern)
+' ============================================================
+package "com.cellsimulation.neighborhood" {
+
+  interface NeighborhoodStrategy {
+    + getNeighbors(grid: Grid, position: Position) : List<Position>
+    + getName() : String
+  }
+
+  class OrthogonalNeighborhood
+  class MooreNeighborhood
+  class EuclideanNeighborhood
+  class ManhattanNeighborhood
+
+  NeighborhoodStrategy <|.. OrthogonalNeighborhood
+  NeighborhoodStrategy <|.. MooreNeighborhood
+  NeighborhoodStrategy <|.. EuclideanNeighborhood
+  NeighborhoodStrategy <|.. ManhattanNeighborhood
+}
+
+' ============================================================
+'  STATISTICS (Observer pattern)
+' ============================================================
+package "com.cellsimulation.stats" {
+
+  interface SimulationListener {
+    + onTick(grid: Grid, tickCount: int) : void
+    + onReset() : void
+  }
+
+  class StatisticsService {
+    - history : List<Statistics>
+    --
+    + onTick(grid: Grid, tickCount: int) : void
+    + onReset() : void
+    + getLatest() : Statistics
+    + getHistory() : List<Statistics>
+  }
+
+  class Statistics {
+    - tick : int
+    - countByState : Map<DiseaseState, Integer>
+    - totalPopulation : int
+    --
+    + getCount(state: DiseaseState) : int
+    + getTotalPopulation() : int
+  }
+
+  SimulationListener <|.. StatisticsService
+}
+
+' ============================================================
+'  PERSISTENCE
+' ============================================================
+package "com.cellsimulation.io" {
+
+  class SaveService {
+    + save(engine: SimulationEngine, filePath: String) : void
+    + load(filePath: String) : SimulationEngine
+  }
+}
+
+' ============================================================
+'  RELATIONSHIPS
+' ============================================================
+App --> MainController : creates
+MainController "1" o-- "1" SimulationEngine
+MainController "1" o-- "1" StatisticsService
+MainController "1" o-- "1" SaveService
+
+SimulationEngine "1" *-- "1" Grid
+SimulationEngine "1" *-- "1" SimulationSettings
+SimulationEngine "1" o-- "1" NeighborhoodStrategy
+SimulationEngine "1" o-- "0..*" SimulationListener
+
+Grid "1" *-- "0..*" Person
+Person "1" *-- "1" Position
+Person --> DiseaseState
+
+StatisticsService "1" *-- "0..*" Statistics
+SaveService ..> SimulationEngine : serializes
+
+@enduml
