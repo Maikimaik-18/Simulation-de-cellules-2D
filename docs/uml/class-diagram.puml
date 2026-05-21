@@ -66,12 +66,15 @@ package "com.cellsimulation.model" {
     + removeListener(listener: SimulationListener) : void
   }
 
-  class Grid {
+  class Grid <<Serializable>> {
     - width : int
     - height : int
     - toricMode : boolean
     - cells : Person[][]
     --
+    + getWidth() : int
+    + getHeight() : int
+    + isToricMode() : boolean
     + getCell(position: Position) : Person
     + setCell(position: Position, person: Person) : void
     + removeCell(position: Position) : void
@@ -79,20 +82,24 @@ package "com.cellsimulation.model" {
     + getEmptyNeighbors(position: Position, neighborhood: NeighborhoodStrategy) : List<Position>
   }
 
-  class Person {
+  class Person <<Serializable>> {
     - state : DiseaseState
     - position : Position
     - infectionDays : int
-    - contagionRadius : int
     --
+    + getState() : DiseaseState
+    + getPosition() : Position
+    + getInfectionDays() : int
+    + setState(state: DiseaseState) : void
+    + setPosition(position: Position) : void
+    + isInfected() : boolean
+    + isDead() : boolean
     + update(settings: SimulationSettings) : void
     + move(grid: Grid, neighborhood: NeighborhoodStrategy, settings: SimulationSettings) : void
     + spread(grid: Grid, neighborhood: NeighborhoodStrategy, settings: SimulationSettings) : void
-    + isDead() : boolean
-    + isInfected() : boolean
   }
 
-  class Position <<value>> {
+  class Position <<Serializable, value>> {
     - row : int
     - column : int
     --
@@ -100,9 +107,10 @@ package "com.cellsimulation.model" {
     + getColumn() : int
     + equals(obj: Object) : boolean
     + hashCode() : int
+    + toString() : String
   }
 
-  class SimulationSettings {
+  class SimulationSettings <<Serializable>> {
     - simulationSpeed : int
     - transmissionProbability : double
     - recoveryProbability : double
@@ -110,7 +118,8 @@ package "com.cellsimulation.model" {
     - mobilityRate : double
     - maxInfectionDays : int
     --
-    + getters/setters
+    + getters() // 6 getters
+    + setters() // 6 setters with bound validation
   }
 
   enum DiseaseState {
@@ -131,10 +140,31 @@ package "com.cellsimulation.neighborhood" {
     + getName() : String
   }
 
-  class OrthogonalNeighborhood
-  class MooreNeighborhood
-  class EuclideanNeighborhood
-  class ManhattanNeighborhood
+  class OrthogonalNeighborhood {
+    + getNeighbors(grid: Grid, position: Position) : List<Position>
+    + getName() : String
+  }
+
+  class MooreNeighborhood {
+    + getNeighbors(grid: Grid, position: Position) : List<Position>
+    + getName() : String
+  }
+
+  class EuclideanNeighborhood {
+    - radius : int
+    --
+    + getRadius() : int
+    + getNeighbors(grid: Grid, position: Position) : List<Position>
+    + getName() : String
+  }
+
+  class ManhattanNeighborhood {
+    - distance : int
+    --
+    + getDistance() : int
+    + getNeighbors(grid: Grid, position: Position) : List<Position>
+    + getName() : String
+  }
 
   NeighborhoodStrategy <|.. OrthogonalNeighborhood
   NeighborhoodStrategy <|.. MooreNeighborhood
