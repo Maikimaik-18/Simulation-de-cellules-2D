@@ -1,5 +1,6 @@
 package com.cellsimulation.neighborhood;
 
+import java.io.Serializable;
 import java.util.List;
 
 import com.cellsimulation.model.Grid;
@@ -13,10 +14,15 @@ import com.cellsimulation.model.Position;
  * planned: orthogonal (4-neighbors), Moore (8-neighbors), Euclidean
  * (distance-based) and Manhattan (taxicab distance).
  *
- * <p>Implementations must be stateless and safe to share across simulation
- * ticks.
+ * <p>Implementations must be stateless (or carry only immutable primitive
+ * state, such as a radius) and safe to share across simulation ticks.
+ *
+ * <p>The interface extends {@link Serializable} so that the currently
+ * selected strategy can be persisted with the rest of the simulation state
+ * by the {@code SaveService}. Implementations therefore must not hold any
+ * non-serializable field.
  */
-public interface NeighborhoodStrategy {
+public interface NeighborhoodStrategy extends Serializable {
 
     /**
      * Returns the positions of the neighbors of the given position on the
