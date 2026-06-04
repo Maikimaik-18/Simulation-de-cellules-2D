@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import com.cellsimulation.neighborhood.NeighborhoodStrategy;
 import com.cellsimulation.stats.SimulationListener;
@@ -41,6 +42,8 @@ import com.cellsimulation.stats.SimulationListener;
  * re-attach their listeners.
  */
 public class SimulationEngine implements Serializable {
+
+    private static final Random RANDOM = new Random();
 
     private final Grid grid;
     private final SimulationSettings settings;
@@ -196,8 +199,29 @@ public class SimulationEngine implements Serializable {
         if (state == null) {
             throw new IllegalArgumentException("state must not be null");
         }
-        Person person = new Person(state, position);
+        double immunity = drawImmunity();
+        Person person = new Person(state, position, immunity);
         grid.setCell(position, person);
+    }
+
+    /**
+     * Draws an immunity factor according to the current settings.
+     *
+     * <p>Returns {@code meanImmunity} when {@code immunityVariance == 0.0}.
+     * Otherwise samples a value from a Gaussian distribution centered on
+     * {@code meanImmunity} with the configured variance, clamped to
+     * {@code [0.0, 1.0]} (truncated normal).
+     *
+     * @return the drawn immunity factor in {@code [0.0, 1.0]}
+     */
+    private double drawImmunity() {
+        double mean = settings.getMeanImmunity();
+        double variance = settings.getImmunityVariance();
+        if (variance == 0.0) {
+            return mean;
+        }
+        double draw = mean + RANDOM.nextGaussian() * variance;
+        return Math.max(0.0, Math.min(1.0, draw));
     }
 
     /**

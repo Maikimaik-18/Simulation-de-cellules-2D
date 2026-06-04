@@ -145,6 +145,22 @@
               <Label fx:id="maxDaysValueLabel" text="14" prefWidth="44"
                      styleClass="slider-value"/>
             </HBox>
+
+            <Label text="Mean immunity"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="meanImmunitySlider" min="0" max="100" value="0"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="meanImmunityValueLabel" text="0.00" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
+
+            <Label text="Immunity variance"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="immunityVarianceSlider" min="0" max="50" value="0"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="immunityVarianceValueLabel" text="0.00" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
           </VBox>
 
           <VBox styleClass="config-section" spacing="6">

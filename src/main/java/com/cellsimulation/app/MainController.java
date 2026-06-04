@@ -120,6 +120,10 @@ public class MainController implements SimulationListener {
     @FXML private Label mortalityValueLabel;
     @FXML private Label mobilityValueLabel;
     @FXML private Label maxDaysValueLabel;
+    @FXML private Slider meanImmunitySlider;
+    @FXML private Label meanImmunityValueLabel;
+    @FXML private Slider immunityVarianceSlider;
+    @FXML private Label immunityVarianceValueLabel;
 
     @FXML private ToggleGroup brushGroup;
     @FXML private RadioButton susceptibleBrush;
@@ -238,6 +242,10 @@ public class MainController implements SimulationListener {
         mobilityValueLabel.setText(formatProbability(settings.getMobilityRate()));
         maxDaysSlider.setValue(settings.getMaxInfectionDays());
         maxDaysValueLabel.setText(String.valueOf(settings.getMaxInfectionDays()));
+        meanImmunitySlider.setValue(settings.getMeanImmunity() * 100.0);
+        meanImmunityValueLabel.setText(formatProbability(settings.getMeanImmunity()));
+        immunityVarianceSlider.setValue(settings.getImmunityVariance() * 100.0);
+        immunityVarianceValueLabel.setText(formatProbability(settings.getImmunityVariance()));
         speedSlider.setValue(settings.getSimulationSpeed());
         speedValueLabel.setText(settings.getSimulationSpeed() + " ticks/s");
 
@@ -292,6 +300,16 @@ public class MainController implements SimulationListener {
             int days = Math.max(1, newVal.intValue());
             engine.getSettings().setMaxInfectionDays(days);
             maxDaysValueLabel.setText(String.valueOf(days));
+        });
+        meanImmunitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double prob = newVal.doubleValue() / 100.0;
+            engine.getSettings().setMeanImmunity(prob);
+            meanImmunityValueLabel.setText(formatProbability(prob));
+        });
+        immunityVarianceSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double variance = newVal.doubleValue() / 100.0;
+            engine.getSettings().setImmunityVariance(variance);
+            immunityVarianceValueLabel.setText(formatProbability(variance));
         });
 
         neighborhoodCombo.setOnAction(e -> handleNeighborhoodSelection());
@@ -767,6 +785,8 @@ public class MainController implements SimulationListener {
         mortalitySlider.setValue(settings.getMortalityProbability() * 100.0);
         mobilitySlider.setValue(settings.getMobilityRate() * 100.0);
         maxDaysSlider.setValue(settings.getMaxInfectionDays());
+        meanImmunitySlider.setValue(settings.getMeanImmunity() * 100.0);
+        immunityVarianceSlider.setValue(settings.getImmunityVariance() * 100.0);
         speedSlider.setValue(settings.getSimulationSpeed());
     }
 

@@ -10,8 +10,10 @@ import com.cellsimulation.neighborhood.NeighborhoodStrategy;
  * An individual living on the simulation grid.
  *
  * <p>A {@code Person} owns a current health {@link DiseaseState}, a
- * {@link Position} on the grid and a counter of how many ticks have been
- * spent in the {@code INFECTED} state. Its three behavioral methods
+ * {@link Position} on the grid, a counter of how many ticks have been
+ * spent in the {@code INFECTED} state and an individual
+ * {@code immunityFactor} that linearly lowers its probability of being
+ * contaminated. Its three behavioral methods
  * ({@link #update}, {@link #move} and {@link #spread}) implement the SIR +
  * Deceased disease propagation model:
  * <ul>
@@ -33,18 +35,38 @@ public class Person implements Serializable {
     private DiseaseState state;
     private Position position;
     private int infectionDays;
+    private double immunityFactor;
 
     /**
-     * Creates a new {@code Person} with the given initial state and
-     * position. The infection counter starts at zero.
+     * Creates a new {@code Person} with the given initial state, position
+     * and immunity factor. The infection counter starts at zero.
+     *
+     * @param state          the initial health state
+     * @param position       the initial position on the grid
+     * @param immunityFactor the individual immunity factor in
+     *                       {@code [0.0, 1.0]}; it linearly lowers the
+     *                       probability of being contaminated
+     */
+    public Person(DiseaseState state, Position position, double immunityFactor) {
+        this.state = state;
+        this.position = position;
+        this.infectionDays = 0;
+        this.immunityFactor = immunityFactor;
+    }
+
+    /**
+     * Creates a new {@code Person} with no individual immunity
+     * ({@code immunityFactor == 0.0}).
+     *
+     * <p>Kept as a convenience so that call sites that do not deal with
+     * immunity keep compiling and behaving exactly as before this feature
+     * was introduced.
      *
      * @param state    the initial health state
      * @param position the initial position on the grid
      */
     public Person(DiseaseState state, Position position) {
-        this.state = state;
-        this.position = position;
-        this.infectionDays = 0;
+        this(state, position, 0.0);
     }
 
     /**
@@ -69,6 +91,13 @@ public class Person implements Serializable {
     }
 
     /**
+     * @return the individual immunity factor in {@code [0.0, 1.0]}
+     */
+    public double getImmunityFactor() {
+        return immunityFactor;
+    }
+
+    /**
      * Sets the health state of this person.
      *
      * @param state the new state
@@ -84,6 +113,15 @@ public class Person implements Serializable {
      */
     public void setPosition(Position position) {
         this.position = position;
+    }
+
+    /**
+     * Sets the individual immunity factor of this person.
+     *
+     * @param immunityFactor the new immunity factor in {@code [0.0, 1.0]}
+     */
+    public void setImmunityFactor(double immunityFactor) {
+        this.immunityFactor = immunityFactor;
     }
 
     /**
@@ -176,8 +214,10 @@ public class Person implements Serializable {
      * model.
      *
      * <p>Only an infected person can transmit. For every neighbor returned
-     * by the strategy, a susceptible occupant becomes infected with
-     * probability {@code transmissionProbability}; empty cells and
+     * by the strategy, a susceptible occupant becomes infected with an
+     * effective probability of
+     * {@code transmissionProbability * (1 - neighbor.immunityFactor)},
+     * which accounts for the neighbor's individual immunity; empty cells and
      * non-susceptible neighbors are ignored. This method never mutates
      * {@code this}: only neighbors may change state.
      *
@@ -201,7 +241,9 @@ public class Person implements Serializable {
             if (neighbor.state != DiseaseState.SUSCEPTIBLE) {
                 continue;
             }
-            if (RANDOM.nextDouble() < settings.getTransmissionProbability()) {
+            double effectiveProb = settings.getTransmissionProbability()
+                    * (1.0 - neighbor.immunityFactor);
+            if (RANDOM.nextDouble() < effectiveProb) {
                 neighbor.state = DiseaseState.INFECTED;
                 neighbor.infectionDays = 0;
             }

@@ -10,7 +10,7 @@ import java.io.Serializable;
  * that probabilities, durations and speed remain consistent across the
  * whole simulation.
  *
- * <p>The six parameters are:
+ * <p>The eight parameters are:
  * <ul>
  *   <li>{@code simulationSpeed} - ticks per second.</li>
  *   <li>{@code transmissionProbability} - chance of contaminating a
@@ -22,6 +22,11 @@ import java.io.Serializable;
  *   <li>{@code mobilityRate} - chance of attempting a move per tick.</li>
  *   <li>{@code maxInfectionDays} - hard cap of infection duration after
  *       which the person recovers automatically.</li>
+ *   <li>{@code meanImmunity} - mean of the immunity factor drawn for each
+ *       new person.</li>
+ *   <li>{@code immunityVariance} - spread of the truncated-normal
+ *       distribution used to draw each immunity factor around
+ *       {@code meanImmunity}.</li>
  * </ul>
  *
  * <p>This class is {@link Serializable} so that it can be embedded in a
@@ -36,6 +41,8 @@ public class SimulationSettings implements Serializable {
     private double mortalityProbability;
     private double mobilityRate;
     private int maxInfectionDays;
+    private double meanImmunity;
+    private double immunityVariance;
 
     /**
      * Creates a new {@code SimulationSettings} populated with the default
@@ -47,6 +54,8 @@ public class SimulationSettings implements Serializable {
      *   <li>{@code mortalityProbability = 0.01}</li>
      *   <li>{@code mobilityRate = 0.20}</li>
      *   <li>{@code maxInfectionDays = 14}</li>
+     *   <li>{@code meanImmunity = 0.0}</li>
+     *   <li>{@code immunityVariance = 0.0}</li>
      * </ul>
      */
     public SimulationSettings() {
@@ -56,6 +65,8 @@ public class SimulationSettings implements Serializable {
         this.mortalityProbability = 0.01;
         this.mobilityRate = 0.20;
         this.maxInfectionDays = 14;
+        this.meanImmunity = 0.0;
+        this.immunityVariance = 0.0;
     }
 
     /**
@@ -194,5 +205,56 @@ public class SimulationSettings implements Serializable {
                     "maxInfectionDays must be >= 1, got " + maxInfectionDays);
         }
         this.maxInfectionDays = maxInfectionDays;
+    }
+
+    /**
+     * @return the mean immunity factor drawn for each new person
+     */
+    public double getMeanImmunity() {
+        return meanImmunity;
+    }
+
+    /**
+     * Sets the mean immunity factor used when drawing the immunity of each
+     * new person.
+     *
+     * @param meanImmunity the mean immunity, in {@code [0.0, 1.0]}
+     * @throws IllegalArgumentException if the value is outside
+     *                                  {@code [0.0, 1.0]}
+     */
+    public void setMeanImmunity(double meanImmunity) {
+        if (meanImmunity < 0.0 || meanImmunity > 1.0) {
+            throw new IllegalArgumentException(
+                    "meanImmunity must be in [0.0, 1.0], got " + meanImmunity);
+        }
+        this.meanImmunity = meanImmunity;
+    }
+
+    /**
+     * @return the spread of the truncated-normal distribution used to draw
+     *         each immunity factor
+     */
+    public double getImmunityVariance() {
+        return immunityVariance;
+    }
+
+    /**
+     * Sets the spread of the truncated-normal distribution used to draw each
+     * immunity factor.
+     *
+     * <p>The value is capped at {@code 0.5} because beyond that the
+     * truncated normal collapses against the {@code [0.0, 1.0]} bounds and
+     * loses its meaning.
+     *
+     * @param immunityVariance the spread, in {@code [0.0, 0.5]}
+     * @throws IllegalArgumentException if the value is outside
+     *                                  {@code [0.0, 0.5]}
+     */
+    public void setImmunityVariance(double immunityVariance) {
+        if (immunityVariance < 0.0 || immunityVariance > 0.5) {
+            throw new IllegalArgumentException(
+                    "immunityVariance must be in [0.0, 0.5], got " + immunityVariance);
+        }
+        this.immunityVariance = immunityVariance;
     }
 }
