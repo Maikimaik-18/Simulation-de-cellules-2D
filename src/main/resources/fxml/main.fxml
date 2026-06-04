@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.cellsimulation.app.MainController">
+
+  <top>
+    <VBox>
+      <MenuBar>
+        <menus>
+          <Menu text="File">
+            <items>
+              <MenuItem fx:id="newMenuItem" text="New" onAction="#onNew"/>
+              <MenuItem fx:id="openMenuItem" text="Open..." onAction="#onOpen"/>
+              <MenuItem fx:id="saveMenuItem" text="Save..." onAction="#onSave"/>
+              <MenuItem fx:id="exitMenuItem" text="Exit" onAction="#onExit"/>
+            </items>
+          </Menu>
+          <Menu text="Help">
+            <items>
+              <MenuItem fx:id="aboutMenuItem" text="About" onAction="#onAbout"/>
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+
+      <ToolBar styleClass="toolbar">
+        <items>
+          <Button fx:id="playPauseButton" text="Play" onAction="#onPlayPause"
+                  styleClass="primary-button"/>
+          <Button fx:id="stepButton" text="Step" onAction="#onStep"
+                  styleClass="secondary-button"/>
+          <Button fx:id="resetButton" text="Reset" onAction="#onResetButton"
+                  styleClass="secondary-button"/>
+
+          <Region prefWidth="24"/>
+
+          <Label text="Speed:"/>
+          <Slider fx:id="speedSlider" min="1" max="20" value="1"
+                  majorTickUnit="5" minorTickCount="4"
+                  showTickMarks="true" prefWidth="180"/>
+          <Label fx:id="speedValueLabel" text="1 ticks/s" prefWidth="80"/>
+
+          <Region HBox.hgrow="ALWAYS"/>
+
+          <Label fx:id="tickLabel" text="Tick: 0" styleClass="toolbar-stat"/>
+          <Region prefWidth="20"/>
+          <Label fx:id="populationLabel" text="Population: 0" styleClass="toolbar-stat"/>
+        </items>
+      </ToolBar>
+    </VBox>
+  </top>
+
+  <left>
+    <ScrollPane fitToWidth="true" hbarPolicy="NEVER"
+                prefWidth="280" minWidth="280" maxWidth="280"
+                styleClass="left-scroll">
+      <content>
+        <VBox spacing="10" styleClass="left-panel">
+          <padding>
+            <Insets top="10" right="10" bottom="10" left="10"/>
+          </padding>
+
+          <VBox styleClass="config-section" spacing="8">
+            <Label text="GRID" styleClass="section-title"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Label text="Width:"/>
+              <TextField fx:id="widthField" prefWidth="60"/>
+              <Label text="Height:"/>
+              <TextField fx:id="heightField" prefWidth="60"/>
+            </HBox>
+            <CheckBox fx:id="toricCheckBox" text="Toric mode"/>
+            <Button fx:id="applyButton" text="Apply" onAction="#onApplyGridConfig"
+                    styleClass="primary-button" maxWidth="Infinity"/>
+          </VBox>
+
+          <VBox styleClass="config-section" spacing="8">
+            <Label text="NEIGHBORHOOD" styleClass="section-title"/>
+            <ComboBox fx:id="neighborhoodCombo" prefWidth="260" maxWidth="Infinity"/>
+            <TextField fx:id="radiusField" promptText="Radius" prefWidth="120"/>
+          </VBox>
+
+          <VBox styleClass="config-section" spacing="6">
+            <Label text="PROBABILITIES" styleClass="section-title"/>
+
+            <Label text="Transmission"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="transmissionSlider" min="0" max="100" value="30"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="transmissionValueLabel" text="0.30" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
+
+            <Label text="Recovery"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="recoverySlider" min="0" max="100" value="5"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="recoveryValueLabel" text="0.05" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
+
+            <Label text="Mortality"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="mortalitySlider" min="0" max="100" value="1"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="mortalityValueLabel" text="0.01" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
+
+            <Label text="Mobility"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="mobilitySlider" min="0" max="100" value="20"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="mobilityValueLabel" text="0.20" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
+
+            <Label text="Max infection days"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="maxDaysSlider" min="1" max="100" value="14"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="maxDaysValueLabel" text="14" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
+          </VBox>
+
+          <VBox styleClass="config-section" spacing="6">
+            <Label text="BRUSH" styleClass="section-title"/>
+            <fx:define>
+              <ToggleGroup fx:id="brushGroup"/>
+            </fx:define>
+            <RadioButton fx:id="susceptibleBrush" text="Susceptible"
+                         toggleGroup="$brushGroup"/>
+            <RadioButton fx:id="infectedBrush" text="Infected"
+                         toggleGroup="$brushGroup"/>
+            <RadioButton fx:id="recoveredBrush" text="Recovered"
+                         toggleGroup="$brushGroup"/>
+            <RadioButton fx:id="deceasedBrush" text="Deceased"
+                         toggleGroup="$brushGroup"/>
+            <RadioButton fx:id="eraseBrush" text="Erase"
+                         toggleGroup="$brushGroup"/>
+          </VBox>
+
+          <VBox styleClass="config-section" spacing="8">
+            <Label text="RANDOM FILL" styleClass="section-title"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Label text="Count:"/>
+              <TextField fx:id="randomCountField" prefWidth="60"/>
+              <Label text="Infected:"/>
+              <TextField fx:id="randomInfectedField" prefWidth="60"/>
+            </HBox>
+            <Button fx:id="randomFillButton" text="Random fill"
+                    onAction="#onRandomFill"
+                    styleClass="primary-button" maxWidth="Infinity"/>
+          </VBox>
+        </VBox>
+      </content>
+    </ScrollPane>
+  </left>
+
+  <center>
+    <StackPane fx:id="canvasContainer" styleClass="canvas-container">
+      <Canvas fx:id="gridCanvas" width="600" height="600"/>
+    </StackPane>
+  </center>
+
+  <right>
+    <VBox spacing="10" prefWidth="320" minWidth="320" maxWidth="320"
+          styleClass="right-panel">
+      <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+      </padding>
+
+      <VBox styleClass="stat-card,stat-card-susceptible" spacing="2">
+        <Label text="SUSCEPTIBLE" styleClass="section-title"/>
+        <HBox alignment="BASELINE_LEFT" spacing="10">
+          <Label fx:id="susceptibleCount" text="0" styleClass="stat-count"/>
+          <Label fx:id="susceptiblePercent" text="0%" styleClass="stat-percent"/>
+        </HBox>
+      </VBox>
+
+      <VBox styleClass="stat-card,stat-card-infected" spacing="2">
+        <Label text="INFECTED" styleClass="section-title"/>
+        <HBox alignment="BASELINE_LEFT" spacing="10">
+          <Label fx:id="infectedCount" text="0" styleClass="stat-count"/>
+          <Label fx:id="infectedPercent" text="0%" styleClass="stat-percent"/>
+        </HBox>
+      </VBox>
+
+      <VBox styleClass="stat-card,stat-card-recovered" spacing="2">
+        <Label text="RECOVERED" styleClass="section-title"/>
+        <HBox alignment="BASELINE_LEFT" spacing="10">
+          <Label fx:id="recoveredCount" text="0" styleClass="stat-count"/>
+          <Label fx:id="recoveredPercent" text="0%" styleClass="stat-percent"/>
+        </HBox>
+      </VBox>
+
+      <VBox styleClass="stat-card,stat-card-deceased" spacing="2">
+        <Label text="DECEASED" styleClass="section-title"/>
+        <HBox alignment="BASELINE_LEFT" spacing="10">
+          <Label fx:id="deceasedCount" text="0" styleClass="stat-count"/>
+          <Label fx:id="deceasedPercent" text="0%" styleClass="stat-percent"/>
+        </HBox>
+      </VBox>
+
+      <VBox styleClass="stat-card,stat-card-total" spacing="2">
+        <Label text="TOTAL" styleClass="section-title"/>
+        <Label fx:id="totalCount" text="0" styleClass="stat-count"/>
+      </VBox>
+
+      <LineChart fx:id="evolutionChart" VBox.vgrow="ALWAYS"
+                 animated="false" legendVisible="true"
+                 styleClass="evolution-chart">
+        <xAxis>
+          <NumberAxis label="Tick"/>
+        </xAxis>
+        <yAxis>
+          <NumberAxis label="Population"/>
+        </yAxis>
+      </LineChart>
+    </VBox>
+  </right>
+
+  <bottom>
+    <HBox spacing="20" styleClass="status-bar" alignment="CENTER_LEFT">
+      <padding>
+        <Insets top="4" right="10" bottom="4" left="10"/>
+      </padding>
+      <Label fx:id="statusLabel" text="Ready"/>
+      <Region HBox.hgrow="ALWAYS"/>
+      <Label fx:id="currentNeighborhoodLabel" text="Orthogonal"/>
+      <Label fx:id="currentModeLabel" text="bounded"/>
+      <Label fx:id="gridSizeLabel" text="20x20 cells"/>
+    </HBox>
+  </bottom>
+
+</BorderPane>

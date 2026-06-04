@@ -1,0 +1,366 @@
+/* ============================================================
+ * Cell Simulation 2D - JavaFX stylesheet
+ * Light theme. Palette: blue / red / green / gray for the four
+ * disease states (Susceptible / Infected / Recovered / Deceased).
+ * ============================================================ */
+
+.root {
+    -fx-base: #FFFFFF;
+    -fx-background: #F5F6FA;
+    -fx-font-family: "Segoe UI", "San Francisco", "Helvetica", "Arial", sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #2E3440;
+}
+
+/* ============================================================
+ *  MENU BAR
+ * ============================================================ */
+
+.menu-bar {
+    -fx-background-color: white;
+    -fx-padding: 2 4 2 4;
+    -fx-border-color: transparent transparent #E0E2E8 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.menu-bar .label {
+    -fx-text-fill: #2E3440;
+}
+
+/* ============================================================
+ *  TOOLBAR
+ * ============================================================ */
+
+.toolbar {
+    -fx-background-color: white;
+    -fx-padding: 10 12 10 12;
+    -fx-spacing: 8;
+    -fx-border-color: transparent transparent #E0E2E8 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.toolbar .label {
+    -fx-text-fill: #2E3440;
+}
+
+.toolbar-stat {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2E3440;
+}
+
+/* ============================================================
+ *  LEFT / RIGHT PANELS
+ * ============================================================ */
+
+.left-scroll {
+    -fx-background-color: #F5F6FA;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-border-color: transparent #E0E2E8 transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.left-scroll > .viewport {
+    -fx-background-color: #F5F6FA;
+}
+
+.left-panel,
+.right-panel {
+    -fx-background-color: #F5F6FA;
+}
+
+.right-panel {
+    -fx-border-color: transparent transparent transparent #E0E2E8;
+    -fx-border-width: 0 0 0 1;
+}
+
+/* ============================================================
+ *  CONFIG SECTIONS (LEFT)
+ * ============================================================ */
+
+.config-section {
+    -fx-background-color: white;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-color: #E0E2E8;
+    -fx-border-width: 1;
+    -fx-padding: 12 15 12 15;
+}
+
+.section-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8E8E93;
+}
+
+/* ============================================================
+ *  BUTTONS
+ * ============================================================ */
+
+.primary-button {
+    -fx-background-color: #2E86DE;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-padding: 6 14 6 14;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #2570BD;
+}
+
+.primary-button:pressed {
+    -fx-background-color: #1F5C9C;
+}
+
+.secondary-button {
+    -fx-background-color: white;
+    -fx-text-fill: #2E3440;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #C0C4CC;
+    -fx-border-width: 1;
+    -fx-padding: 6 14 6 14;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #F0F2F5;
+}
+
+.secondary-button:pressed {
+    -fx-background-color: #E5E8EE;
+}
+
+/* ============================================================
+ *  INPUTS
+ * ============================================================ */
+
+.text-field,
+.combo-box-base,
+.combo-box .list-cell {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-color: #C0C4CC;
+    -fx-border-width: 1;
+    -fx-padding: 4 8 4 8;
+    -fx-text-fill: #2E3440;
+}
+
+.text-field:focused,
+.combo-box-base:focused {
+    -fx-border-color: #2E86DE;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-color: #C0C4CC;
+    -fx-border-width: 1;
+}
+
+.combo-box-popup .list-cell {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 4 10 4 10;
+}
+
+.combo-box-popup .list-cell:filled:hover {
+    -fx-background-color: #F0F2F5;
+}
+
+.check-box {
+    -fx-text-fill: #2E3440;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #2E86DE;
+    -fx-border-color: #2E86DE;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: white;
+}
+
+.radio-button {
+    -fx-text-fill: #2E3440;
+}
+
+.radio-button:selected .dot {
+    -fx-background-color: #2E86DE;
+}
+
+.radio-button:selected .radio {
+    -fx-border-color: #2E86DE;
+}
+
+/* ============================================================
+ *  SLIDERS
+ * ============================================================ */
+
+.slider .track {
+    -fx-background-color: #DCE0E6;
+    -fx-background-radius: 3;
+    -fx-pref-height: 6;
+}
+
+.slider .thumb {
+    -fx-background-color: #2E86DE;
+    -fx-background-radius: 10;
+}
+
+.slider:focused .thumb {
+    -fx-effect: dropshadow(gaussian, rgba(46, 134, 222, 0.4), 4, 0, 0, 0);
+}
+
+.slider-value {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2E3440;
+}
+
+/* ============================================================
+ *  CANVAS
+ * ============================================================ */
+
+.canvas-container {
+    -fx-background-color: #F5F6FA;
+    -fx-padding: 12;
+}
+
+/* ============================================================
+ *  STAT CARDS (RIGHT)
+ * ============================================================ */
+
+.stat-card {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-width: 0 0 0 4;
+    -fx-border-color: #E0E2E8;
+    -fx-padding: 12 15 12 15;
+}
+
+.stat-card-susceptible {
+    -fx-border-color: #2E86DE;
+}
+
+.stat-card-infected {
+    -fx-border-color: #EE5253;
+}
+
+.stat-card-recovered {
+    -fx-border-color: #10AC84;
+}
+
+.stat-card-deceased {
+    -fx-border-color: #576574;
+}
+
+.stat-card-total {
+    -fx-border-color: #2E3440;
+}
+
+.stat-count {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2E3440;
+}
+
+.stat-percent {
+    -fx-font-size: 12px;
+    -fx-text-fill: #8E8E93;
+}
+
+/* ============================================================
+ *  STATUS BAR
+ * ============================================================ */
+
+.status-bar {
+    -fx-background-color: #ECEEF2;
+    -fx-font-size: 11px;
+    -fx-border-color: #E0E2E8 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.status-bar .label {
+    -fx-text-fill: #4A5560;
+    -fx-font-size: 11px;
+}
+
+/* ============================================================
+ *  LINE CHART
+ * ============================================================ */
+
+.evolution-chart {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-padding: 6;
+}
+
+.chart-plot-background {
+    -fx-background-color: white;
+}
+
+.chart-vertical-grid-lines,
+.chart-horizontal-grid-lines {
+    -fx-stroke: #F0F2F5;
+}
+
+.chart-vertical-zero-line,
+.chart-horizontal-zero-line {
+    -fx-stroke: #D8DCE3;
+}
+
+.axis {
+    -fx-tick-label-fill: #4A5560;
+    -fx-font-size: 10px;
+}
+
+.axis-label {
+    -fx-text-fill: #4A5560;
+    -fx-font-size: 11px;
+}
+
+/* Series order matches initializeChartSeries(): 0=S, 1=I, 2=R, 3=D */
+.default-color0.chart-series-line { -fx-stroke: #2E86DE; }
+.default-color1.chart-series-line { -fx-stroke: #EE5253; }
+.default-color2.chart-series-line { -fx-stroke: #10AC84; }
+.default-color3.chart-series-line { -fx-stroke: #576574; }
+
+.default-color0.chart-line-symbol { -fx-background-color: #2E86DE, white; }
+.default-color1.chart-line-symbol { -fx-background-color: #EE5253, white; }
+.default-color2.chart-line-symbol { -fx-background-color: #10AC84, white; }
+.default-color3.chart-line-symbol { -fx-background-color: #576574, white; }
+
+.chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 4 0 0 0;
+}
+
+.chart-legend-item {
+    -fx-text-fill: #2E3440;
+    -fx-font-size: 11px;
+}
+
+/* ============================================================
+ *  SCROLL BAR (subtle look for the left ScrollPane)
+ * ============================================================ */
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #C0C4CC;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+}
