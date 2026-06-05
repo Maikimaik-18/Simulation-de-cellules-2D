@@ -17,29 +17,36 @@ skinparam linetype ortho
 ' ============================================================
 '  UI LAYER
 ' ============================================================
-package "com.cellsimulation.ui" {
+package "com.cellsimulation.app" {
 
-  class App {
+  class Main {
     + main(args: String[]) : void
-    + start(stage: Stage) : void
+    + start(primaryStage: Stage) : void
   }
 
   class MainController {
     - engine : SimulationEngine
     - statisticsService : StatisticsService
     - saveService : SaveService
-    --
+    - timeline : Timeline
+    - lastPaintedPosition : Position
+    .. @FXML-injected controls omitted ..
     + initialize() : void
-    + handlePlay() : void
-    + handlePause() : void
-    + handleStep() : void
-    + handleReset() : void
-    + handleSave() : void
-    + handleLoad() : void
-    + handleSpeedChange(speed: int) : void
-    + handleNeighborhoodChange(mode: NeighborhoodStrategy) : void
-    + handleGridClick(position: Position) : void
-    + handleRandomFill(count: int) : void
+    + onTick(grid: Grid, tickCount: int) : void
+    + onReset() : void
+    - onPlayPause() : void
+    - onStep() : void
+    - onResetButton() : void
+    - onApplyGridConfig() : void
+    - onRandomFill() : void
+    - onVaccinateRandom() : void
+    - onNew() : void
+    - onOpen() : void
+    - onSave() : void
+    - onExit() : void
+    - onAbout() : void
+    - handleNeighborhoodSelection() : void
+    - handleCanvasPaint(event: MouseEvent) : void
   }
 }
 
@@ -48,7 +55,7 @@ package "com.cellsimulation.ui" {
 ' ============================================================
 package "com.cellsimulation.model" {
 
-  class SimulationEngine {
+  class SimulationEngine <<Serializable>> {
     - grid : Grid
     - settings : SimulationSettings
     - neighborhood : NeighborhoodStrategy
@@ -64,6 +71,12 @@ package "com.cellsimulation.model" {
     + removeCell(position: Position) : void
     + addListener(listener: SimulationListener) : void
     + removeListener(listener: SimulationListener) : void
+    + setNeighborhood(neighborhood: NeighborhoodStrategy) : void
+    + getGrid() : Grid
+    + getSettings() : SimulationSettings
+    + getNeighborhood() : NeighborhoodStrategy
+    + isRunning() : boolean
+    + getTickCount() : int
   }
 
   class Grid <<Serializable>> {
@@ -86,12 +99,18 @@ package "com.cellsimulation.model" {
     - state : DiseaseState
     - position : Position
     - infectionDays : int
+    - immunityFactor : double
+    - vaccinated : boolean
     --
     + getState() : DiseaseState
     + getPosition() : Position
     + getInfectionDays() : int
+    + getImmunityFactor() : double
     + setState(state: DiseaseState) : void
     + setPosition(position: Position) : void
+    + setImmunityFactor(immunityFactor: double) : void
+    + isVaccinated() : boolean
+    + setVaccinated(vaccinated: boolean) : void
     + isInfected() : boolean
     + isDead() : boolean
     + update(settings: SimulationSettings) : void
@@ -117,9 +136,12 @@ package "com.cellsimulation.model" {
     - mortalityProbability : double
     - mobilityRate : double
     - maxInfectionDays : int
+    - meanImmunity : double
+    - immunityVariance : double
+    - vaccineEfficacy : double
     --
-    + getters() // 6 getters
-    + setters() // 6 setters with bound validation
+    + getters() // 9 getters
+    + setters() // 9 setters with bound validation
   }
 
   enum DiseaseState {
@@ -135,22 +157,22 @@ package "com.cellsimulation.model" {
 ' ============================================================
 package "com.cellsimulation.neighborhood" {
 
-  interface NeighborhoodStrategy {
+  interface NeighborhoodStrategy <<Serializable>> {
     + getNeighbors(grid: Grid, position: Position) : List<Position>
     + getName() : String
   }
 
-  class OrthogonalNeighborhood {
+  class OrthogonalNeighborhood <<Serializable>> {
     + getNeighbors(grid: Grid, position: Position) : List<Position>
     + getName() : String
   }
 
-  class MooreNeighborhood {
+  class MooreNeighborhood <<Serializable>> {
     + getNeighbors(grid: Grid, position: Position) : List<Position>
     + getName() : String
   }
 
-  class EuclideanNeighborhood {
+  class EuclideanNeighborhood <<Serializable>> {
     - radius : int
     --
     + getRadius() : int
@@ -158,7 +180,7 @@ package "com.cellsimulation.neighborhood" {
     + getName() : String
   }
 
-  class ManhattanNeighborhood {
+  class ManhattanNeighborhood <<Serializable>> {
     - distance : int
     --
     + getDistance() : int
@@ -196,8 +218,10 @@ package "com.cellsimulation.stats" {
     - countByState : Map<DiseaseState, Integer>
     - totalPopulation : int
     --
+    + getTick() : int
     + getCount(state: DiseaseState) : int
     + getTotalPopulation() : int
+    + getCountByState() : Map<DiseaseState, Integer>
   }
 
   SimulationListener <|.. StatisticsService
@@ -217,7 +241,8 @@ package "com.cellsimulation.io" {
 ' ============================================================
 '  RELATIONSHIPS
 ' ============================================================
-App --> MainController : creates
+Main --> MainController : creates
+SimulationListener <|.. MainController
 MainController "1" o-- "1" SimulationEngine
 MainController "1" o-- "1" StatisticsService
 MainController "1" o-- "1" SaveService

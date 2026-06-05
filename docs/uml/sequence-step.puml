@@ -28,8 +28,7 @@ loop every tick (based on speed)
     Engine -> Engine : step()
     activate Engine
 
-    Engine -> Grid : getAllCells()
-    Grid --> Engine : List<Person>
+    Engine -> Engine : iterate over all positions
 
     loop for each Person
         Engine -> Person : update(settings)
