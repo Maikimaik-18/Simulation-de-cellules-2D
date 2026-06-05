@@ -13,7 +13,9 @@ import com.cellsimulation.neighborhood.NeighborhoodStrategy;
  * {@link Position} on the grid, a counter of how many ticks have been
  * spent in the {@code INFECTED} state and an individual
  * {@code immunityFactor} that linearly lowers its probability of being
- * contaminated. Its three behavioral methods
+ * contaminated. It may also be {@code vaccinated}, in which case its
+ * effective immunity is raised to at least the configured vaccine efficacy.
+ * Its three behavioral methods
  * ({@link #update}, {@link #move} and {@link #spread}) implement the SIR +
  * Deceased disease propagation model:
  * <ul>
@@ -36,6 +38,7 @@ public class Person implements Serializable {
     private Position position;
     private int infectionDays;
     private double immunityFactor;
+    private boolean vaccinated;
 
     /**
      * Creates a new {@code Person} with the given initial state, position
@@ -52,6 +55,7 @@ public class Person implements Serializable {
         this.position = position;
         this.infectionDays = 0;
         this.immunityFactor = immunityFactor;
+        this.vaccinated = false;
     }
 
     /**
@@ -122,6 +126,26 @@ public class Person implements Serializable {
      */
     public void setImmunityFactor(double immunityFactor) {
         this.immunityFactor = immunityFactor;
+    }
+
+    /**
+     * @return {@code true} if this person has been vaccinated
+     */
+    public boolean isVaccinated() {
+        return vaccinated;
+    }
+
+    /**
+     * Sets the vaccination flag of this person.
+     *
+     * <p>Vaccination is a permanent attribute: a vaccinated person that
+     * still gets infected (the vaccine is not necessarily perfect) keeps its
+     * vaccinated flag.
+     *
+     * @param vaccinated {@code true} to mark the person as vaccinated
+     */
+    public void setVaccinated(boolean vaccinated) {
+        this.vaccinated = vaccinated;
     }
 
     /**
@@ -216,10 +240,12 @@ public class Person implements Serializable {
      * <p>Only an infected person can transmit. For every neighbor returned
      * by the strategy, a susceptible occupant becomes infected with an
      * effective probability of
-     * {@code transmissionProbability * (1 - neighbor.immunityFactor)},
-     * which accounts for the neighbor's individual immunity; empty cells and
-     * non-susceptible neighbors are ignored. This method never mutates
-     * {@code this}: only neighbors may change state.
+     * {@code transmissionProbability * (1 - effectiveImmunity)}. The
+     * neighbor's effective immunity is its individual {@code immunityFactor},
+     * raised to the configured {@code vaccineEfficacy} when the neighbor is
+     * vaccinated. Empty cells and non-susceptible neighbors are ignored.
+     * This method never mutates {@code this}: only neighbors may change
+     * state.
      *
      * @param grid         the grid on which this person lives
      * @param neighborhood the neighborhood strategy used to identify the
@@ -241,8 +267,11 @@ public class Person implements Serializable {
             if (neighbor.state != DiseaseState.SUSCEPTIBLE) {
                 continue;
             }
+            double effectiveImmunity = neighbor.vaccinated
+                    ? Math.max(neighbor.immunityFactor, settings.getVaccineEfficacy())
+                    : neighbor.immunityFactor;
             double effectiveProb = settings.getTransmissionProbability()
-                    * (1.0 - neighbor.immunityFactor);
+                    * (1.0 - effectiveImmunity);
             if (RANDOM.nextDouble() < effectiveProb) {
                 neighbor.state = DiseaseState.INFECTED;
                 neighbor.infectionDays = 0;

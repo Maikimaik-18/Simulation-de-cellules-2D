@@ -10,7 +10,7 @@ import java.io.Serializable;
  * that probabilities, durations and speed remain consistent across the
  * whole simulation.
  *
- * <p>The eight parameters are:
+ * <p>The nine parameters are:
  * <ul>
  *   <li>{@code simulationSpeed} - ticks per second.</li>
  *   <li>{@code transmissionProbability} - chance of contaminating a
@@ -27,6 +27,8 @@ import java.io.Serializable;
  *   <li>{@code immunityVariance} - spread of the truncated-normal
  *       distribution used to draw each immunity factor around
  *       {@code meanImmunity}.</li>
+ *   <li>{@code vaccineEfficacy} - minimum immunity granted to a vaccinated
+ *       person.</li>
  * </ul>
  *
  * <p>This class is {@link Serializable} so that it can be embedded in a
@@ -43,6 +45,7 @@ public class SimulationSettings implements Serializable {
     private int maxInfectionDays;
     private double meanImmunity;
     private double immunityVariance;
+    private double vaccineEfficacy;
 
     /**
      * Creates a new {@code SimulationSettings} populated with the default
@@ -56,6 +59,7 @@ public class SimulationSettings implements Serializable {
      *   <li>{@code maxInfectionDays = 14}</li>
      *   <li>{@code meanImmunity = 0.0}</li>
      *   <li>{@code immunityVariance = 0.0}</li>
+     *   <li>{@code vaccineEfficacy = 0.85}</li>
      * </ul>
      */
     public SimulationSettings() {
@@ -67,6 +71,7 @@ public class SimulationSettings implements Serializable {
         this.maxInfectionDays = 14;
         this.meanImmunity = 0.0;
         this.immunityVariance = 0.0;
+        this.vaccineEfficacy = 0.85;
     }
 
     /**
@@ -256,5 +261,28 @@ public class SimulationSettings implements Serializable {
                     "immunityVariance must be in [0.0, 0.5], got " + immunityVariance);
         }
         this.immunityVariance = immunityVariance;
+    }
+
+    /**
+     * @return the minimum immunity granted to a vaccinated person
+     */
+    public double getVaccineEfficacy() {
+        return vaccineEfficacy;
+    }
+
+    /**
+     * Sets the vaccine efficacy, i.e. the minimum immunity granted to a
+     * vaccinated person.
+     *
+     * @param vaccineEfficacy the efficacy, in {@code [0.0, 1.0]}
+     * @throws IllegalArgumentException if the value is outside
+     *                                  {@code [0.0, 1.0]}
+     */
+    public void setVaccineEfficacy(double vaccineEfficacy) {
+        if (vaccineEfficacy < 0.0 || vaccineEfficacy > 1.0) {
+            throw new IllegalArgumentException(
+                    "vaccineEfficacy must be in [0.0, 1.0], got " + vaccineEfficacy);
+        }
+        this.vaccineEfficacy = vaccineEfficacy;
     }
 }

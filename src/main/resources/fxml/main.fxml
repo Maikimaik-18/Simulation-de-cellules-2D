@@ -161,6 +161,14 @@
               <Label fx:id="immunityVarianceValueLabel" text="0.00" prefWidth="44"
                      styleClass="slider-value"/>
             </HBox>
+
+            <Label text="Vaccine efficacy"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Slider fx:id="vaccineEfficacySlider" min="0" max="100" value="85"
+                      HBox.hgrow="ALWAYS"/>
+              <Label fx:id="vaccineEfficacyValueLabel" text="0.85" prefWidth="44"
+                     styleClass="slider-value"/>
+            </HBox>
           </VBox>
 
           <VBox styleClass="config-section" spacing="6">
@@ -176,8 +184,21 @@
                          toggleGroup="$brushGroup"/>
             <RadioButton fx:id="deceasedBrush" text="Deceased"
                          toggleGroup="$brushGroup"/>
+            <RadioButton fx:id="vaccinatedBrush" text="Vaccinated"
+                         toggleGroup="$brushGroup"/>
             <RadioButton fx:id="eraseBrush" text="Erase"
                          toggleGroup="$brushGroup"/>
+          </VBox>
+
+          <VBox styleClass="config-section" spacing="8">
+            <Label text="VACCINATION" styleClass="section-title"/>
+            <HBox spacing="8" alignment="CENTER_LEFT">
+              <Label text="Percent:"/>
+              <TextField fx:id="vaccinationPercentField" prefWidth="60"/>
+            </HBox>
+            <Button fx:id="vaccinateRandomButton" text="Vaccinate random"
+                    onAction="#onVaccinateRandom"
+                    styleClass="primary-button" maxWidth="Infinity"/>
           </VBox>
 
           <VBox styleClass="config-section" spacing="8">

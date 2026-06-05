@@ -2,7 +2,10 @@ package com.cellsimulation.app;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
@@ -87,6 +90,7 @@ public class MainController implements SimulationListener {
     private static final String BRUSH_RECOVERED = "R";
     private static final String BRUSH_DECEASED = "D";
     private static final String BRUSH_ERASE = "Erase";
+    private static final String BRUSH_VACCINATED = "V";
 
     @FXML private MenuItem newMenuItem;
     @FXML private MenuItem openMenuItem;
@@ -124,13 +128,19 @@ public class MainController implements SimulationListener {
     @FXML private Label meanImmunityValueLabel;
     @FXML private Slider immunityVarianceSlider;
     @FXML private Label immunityVarianceValueLabel;
+    @FXML private Slider vaccineEfficacySlider;
+    @FXML private Label vaccineEfficacyValueLabel;
 
     @FXML private ToggleGroup brushGroup;
     @FXML private RadioButton susceptibleBrush;
     @FXML private RadioButton infectedBrush;
     @FXML private RadioButton recoveredBrush;
     @FXML private RadioButton deceasedBrush;
+    @FXML private RadioButton vaccinatedBrush;
     @FXML private RadioButton eraseBrush;
+
+    @FXML private TextField vaccinationPercentField;
+    @FXML private Button vaccinateRandomButton;
 
     @FXML private TextField randomCountField;
     @FXML private TextField randomInfectedField;
@@ -246,10 +256,13 @@ public class MainController implements SimulationListener {
         meanImmunityValueLabel.setText(formatProbability(settings.getMeanImmunity()));
         immunityVarianceSlider.setValue(settings.getImmunityVariance() * 100.0);
         immunityVarianceValueLabel.setText(formatProbability(settings.getImmunityVariance()));
+        vaccineEfficacySlider.setValue(settings.getVaccineEfficacy() * 100.0);
+        vaccineEfficacyValueLabel.setText(formatProbability(settings.getVaccineEfficacy()));
         speedSlider.setValue(settings.getSimulationSpeed());
         speedValueLabel.setText(settings.getSimulationSpeed() + " ticks/s");
 
         infectedBrush.setSelected(true);
+        vaccinationPercentField.setText("30");
         randomCountField.setText("50");
         randomInfectedField.setText("3");
     }
@@ -310,6 +323,11 @@ public class MainController implements SimulationListener {
             double variance = newVal.doubleValue() / 100.0;
             engine.getSettings().setImmunityVariance(variance);
             immunityVarianceValueLabel.setText(formatProbability(variance));
+        });
+        vaccineEfficacySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double efficacy = newVal.doubleValue() / 100.0;
+            engine.getSettings().setVaccineEfficacy(efficacy);
+            vaccineEfficacyValueLabel.setText(formatProbability(efficacy));
         });
 
         neighborhoodCombo.setOnAction(e -> handleNeighborhoodSelection());
@@ -462,6 +480,50 @@ public class MainController implements SimulationListener {
     }
 
     /**
+     * Handler for the "Vaccinate random N%" button.
+     *
+     * <p>Reads the requested percentage from {@code vaccinationPercentField},
+     * counts the living persons on the grid (anything other than DECEASED),
+     * picks {@code percent / 100 * living} of them uniformly at random and
+     * marks them as vaccinated. Already-vaccinated persons can be picked
+     * again (no-op).
+     */
+    @FXML
+    private void onVaccinateRandom() {
+        try {
+            int percent = Integer.parseInt(vaccinationPercentField.getText().trim());
+            if (percent < 0 || percent > 100) {
+                showError("percent must be in [0, 100], got " + percent);
+                return;
+            }
+            Grid grid = engine.getGrid();
+            List<Person> living = new ArrayList<>();
+            for (int row = 0; row < grid.getHeight(); row++) {
+                for (int col = 0; col < grid.getWidth(); col++) {
+                    Person p = grid.getCell(new Position(row, col));
+                    if (p != null && !p.isDead()) {
+                        living.add(p);
+                    }
+                }
+            }
+            if (living.isEmpty()) {
+                showError("No living person to vaccinate");
+                return;
+            }
+            int toVaccinate = (int) Math.round(living.size() * percent / 100.0);
+            Collections.shuffle(living);
+            for (int i = 0; i < toVaccinate; i++) {
+                living.get(i).setVaccinated(true);
+            }
+            drawGrid();
+            statusLabel.setText("Vaccinated " + toVaccinate + " persons ("
+                    + percent + "% of " + living.size() + " living)");
+        } catch (NumberFormatException ex) {
+            showError("Invalid vaccination percent: " + ex.getMessage());
+        }
+    }
+
+    /**
      * Handler for the {@code File &gt; New} menu item.
      *
      * <p>Equivalent to clicking the toolbar "Reset" button: pauses the
@@ -603,7 +665,18 @@ public class MainController implements SimulationListener {
             return;
         }
         String brush = getSelectedBrush();
-        if (BRUSH_ERASE.equals(brush)) {
+        if (BRUSH_VACCINATED.equals(brush)) {
+            Person existing = engine.getGrid().getCell(pos);
+            if (existing == null) {
+                engine.addCell(pos, DiseaseState.SUSCEPTIBLE);
+                Person fresh = engine.getGrid().getCell(pos);
+                if (fresh != null) {
+                    fresh.setVaccinated(true);
+                }
+            } else {
+                existing.setVaccinated(true);
+            }
+        } else if (BRUSH_ERASE.equals(brush)) {
             engine.removeCell(pos);
         } else {
             engine.removeCell(pos);
@@ -678,6 +751,15 @@ public class MainController implements SimulationListener {
                 }
                 gc.setFill(colorOf(occupant.getState()));
                 gc.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                if (occupant.isVaccinated()) {
+                    gc.setStroke(Color.web("#F39C12"));
+                    gc.setLineWidth(Math.max(2.0, cellSize / 8.0));
+                    gc.strokeRect(
+                            col * cellSize + 1,
+                            row * cellSize + 1,
+                            cellSize - 2,
+                            cellSize - 2);
+                }
             }
         }
 
@@ -787,6 +869,7 @@ public class MainController implements SimulationListener {
         maxDaysSlider.setValue(settings.getMaxInfectionDays());
         meanImmunitySlider.setValue(settings.getMeanImmunity() * 100.0);
         immunityVarianceSlider.setValue(settings.getImmunityVariance() * 100.0);
+        vaccineEfficacySlider.setValue(settings.getVaccineEfficacy() * 100.0);
         speedSlider.setValue(settings.getSimulationSpeed());
     }
 
@@ -802,6 +885,9 @@ public class MainController implements SimulationListener {
         }
         if (deceasedBrush.isSelected()) {
             return BRUSH_DECEASED;
+        }
+        if (vaccinatedBrush.isSelected()) {
+            return BRUSH_VACCINATED;
         }
         if (eraseBrush.isSelected()) {
             return BRUSH_ERASE;
