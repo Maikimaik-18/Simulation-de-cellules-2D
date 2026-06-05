@@ -3,7 +3,7 @@ package com.cellsimulation.model;
 import java.io.Serializable;
 
 /**
- * Centralizes the six tunable parameters of the simulation.
+ * Centralizes the nine tunable parameters of the simulation.
  *
  * <p>Both the {@code SimulationEngine} and the {@code Person} instances read
  * their configuration from a single {@code SimulationSettings} instance, so

@@ -16,9 +16,9 @@ occupée par une **personne**. Une personne peut être dans l'un des 4 états :
 
 | État          | Couleur | Signification                                        |
 |---------------|---------|------------------------------------------------------|
-| `SUSCEPTIBLE` | Vert    | Personne saine, peut être contaminée                 |
+| `SUSCEPTIBLE` | Bleu    | Personne saine, peut être contaminée                 |
 | `INFECTED`    | Rouge   | Personne malade, contamine ses voisins               |
-| `RECOVERED`   | Bleu    | Personne guérie, immunisée à vie                     |
+| `RECOVERED`   | Vert    | Personne guérie, immunisée à vie                     |
 | `DECEASED`    | Gris    | Personne morte, ne participe plus à la simulation    |
 
 À chaque tour de simulation, chaque personne :
@@ -57,6 +57,11 @@ l'interface.
 ### Sauvegarde / restauration
 - Sauvegarder l'état complet d'une simulation dans un fichier
 - Recharger une simulation depuis un fichier
+
+### Extensions
+- **Immunité individuelle** : chaque personne reçoit un facteur d'immunité tiré aléatoirement autour d'une moyenne réglable (slider « Mean immunity ») avec une dispersion réglable (slider « Immunity variance »). Une immunité plus élevée réduit linéairement sa probabilité d'être contaminée.
+- **Vaccination** : un pinceau « Vaccinated » marque comme vaccinées les personnes peintes, et le bouton « Vaccinate random » vaccine un pourcentage saisi de la population vivante ; l'efficacité du vaccin (immunité minimale garantie à une personne vaccinée) est réglable.
+- **Peinture au glisser** : on peut peindre plusieurs cases d'affilée en maintenant le bouton de la souris enfoncé et en glissant le curseur sur la grille.
 
 ---
 
@@ -129,11 +134,12 @@ scripts\build.bat
 
 ## Architecture logicielle
 
-Le code est organisé en **5 packages** :
+Le code est organisé en **6 packages** :
 
 | Package         | Rôle                                                     |
 |-----------------|----------------------------------------------------------|
-| `ui`            | Interface JavaFX (App, MainController)                   |
+| `app`           | Interface JavaFX (Main, MainController)                  |
+| `cli`           | Version en ligne de commande (CliRunner)                |
 | `model`         | Cœur de la simulation (SimulationEngine, Grid, Person)   |
 | `neighborhood`  | 4 stratégies de voisinage interchangeables               |
 | `stats`         | Calcul et historique des statistiques                    |
@@ -144,7 +150,7 @@ Le code est organisé en **5 packages** :
 - **Strategy** : modes de voisinage interchangeables (`NeighborhoodStrategy`)
 - **Observer** : notification automatique des statistiques (`SimulationListener`)
 - **Service** : isolation des responsabilités transverses (`StatisticsService`, `SaveService`)
-- **MVC** : séparation `ui` / `model` / contrôleur
+- **MVC** : séparation `app` / `model` / contrôleur
 
 ---
 
