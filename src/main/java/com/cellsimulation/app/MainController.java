@@ -170,6 +170,7 @@ public class MainController implements SimulationListener {
     private StatisticsService statisticsService;
     private final SaveService saveService = new SaveService();
     private Timeline timeline;
+    private Position lastPaintedPosition;
 
     private XYChart.Series<Number, Number> susceptibleSeries;
     private XYChart.Series<Number, Number> infectedSeries;
@@ -331,7 +332,9 @@ public class MainController implements SimulationListener {
         });
 
         neighborhoodCombo.setOnAction(e -> handleNeighborhoodSelection());
-        gridCanvas.setOnMouseClicked(this::handleCanvasClick);
+        gridCanvas.setOnMousePressed(this::handleCanvasPaint);
+        gridCanvas.setOnMouseDragged(this::handleCanvasPaint);
+        gridCanvas.setOnMouseReleased(e -> lastPaintedPosition = null);
     }
 
     /**
@@ -653,7 +656,17 @@ public class MainController implements SimulationListener {
         updateStatusBar();
     }
 
-    private void handleCanvasClick(MouseEvent event) {
+    /**
+     * Mouse handler used for both {@code MOUSE_PRESSED} and
+     * {@code MOUSE_DRAGGED} events on the canvas. Paints the cell under
+     * the cursor with the currently selected brush. The
+     * {@link #lastPaintedPosition} field is used to deduplicate
+     * consecutive events that target the same cell, which avoids
+     * redundant grid mutations and redraws during a long drag.
+     *
+     * @param event the mouse event that triggered the paint
+     */
+    private void handleCanvasPaint(MouseEvent event) {
         int cellSize = computeCellSize();
         if (cellSize <= 0) {
             return;
@@ -664,6 +677,11 @@ public class MainController implements SimulationListener {
         if (!engine.getGrid().isInside(pos)) {
             return;
         }
+        if (pos.equals(lastPaintedPosition)) {
+            return;
+        }
+        lastPaintedPosition = pos;
+
         String brush = getSelectedBrush();
         if (BRUSH_VACCINATED.equals(brush)) {
             Person existing = engine.getGrid().getCell(pos);
