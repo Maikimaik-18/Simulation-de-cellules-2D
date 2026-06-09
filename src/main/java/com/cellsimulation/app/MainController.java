@@ -7,8 +7,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 
 import com.cellsimulation.io.SaveService;
 import com.cellsimulation.model.DiseaseState;
@@ -32,6 +34,7 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.chart.BarChart;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
@@ -160,6 +163,9 @@ public class MainController implements SimulationListener {
     @FXML private Label deceasedPercent;
 
     @FXML private LineChart<Number, Number> evolutionChart;
+    @FXML private BarChart<String, Number> infectionHistogramChart;
+    @FXML private Label avgInfectionDaysLabel;
+    @FXML private Label immunityRangeLabel;
 
     @FXML private Label statusLabel;
     @FXML private Label currentNeighborhoodLabel;
@@ -836,6 +842,30 @@ public class MainController implements SimulationListener {
         deceasedPercent.setText(percent(deceased, total));
         tickLabel.setText("Tick: " + engine.getTickCount());
         populationLabel.setText("Population: " + total);
+        updatePropertyStats();
+    }
+
+    /**
+     * Recomputes the property-level statistics shown on the right panel: the
+     * average infection duration, the immunity range among living persons and
+     * the histogram of infection durations among infected persons.
+     */
+    private void updatePropertyStats() {
+        Statistics snapshot = new Statistics(engine.getGrid(), engine.getTickCount());
+        avgInfectionDaysLabel.setText(String.format(Locale.US,
+                "Avg infection: %.1f days", snapshot.getAverageInfectionDays()));
+        immunityRangeLabel.setText(String.format(Locale.US,
+                "Immunity min/max: %.2f / %.2f",
+                snapshot.getMinImmunity(), snapshot.getMaxImmunity()));
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        Map<Integer, Integer> histogram =
+                new TreeMap<>(snapshot.getInfectionDaysHistogram());
+        for (Map.Entry<Integer, Integer> entry : histogram.entrySet()) {
+            series.getData().add(new XYChart.Data<>(
+                    String.valueOf(entry.getKey()), entry.getValue()));
+        }
+        infectionHistogramChart.getData().clear();
+        infectionHistogramChart.getData().add(series);
     }
 
     private String percent(int part, int total) {

@@ -2,6 +2,8 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
@@ -225,8 +227,11 @@
   </center>
 
   <right>
-    <VBox spacing="10" prefWidth="320" minWidth="320" maxWidth="320"
-          styleClass="right-panel">
+    <ScrollPane fitToWidth="true" hbarPolicy="NEVER"
+                prefWidth="320" minWidth="320" maxWidth="320"
+                styleClass="right-scroll">
+      <content>
+    <VBox spacing="10" styleClass="right-panel">
       <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
       </padding>
@@ -268,7 +273,13 @@
         <Label fx:id="totalCount" text="0" styleClass="stat-count"/>
       </VBox>
 
-      <LineChart fx:id="evolutionChart" VBox.vgrow="ALWAYS"
+      <VBox styleClass="stat-card,stat-card-total" spacing="2">
+        <Label text="PROPERTIES" styleClass="section-title"/>
+        <Label fx:id="avgInfectionDaysLabel" text="Avg infection: 0.0 days"/>
+        <Label fx:id="immunityRangeLabel" text="Immunity min/max: 0.00 / 0.00"/>
+      </VBox>
+
+      <LineChart fx:id="evolutionChart" prefHeight="240" minHeight="200"
                  animated="false" legendVisible="true"
                  styleClass="evolution-chart">
         <xAxis>
@@ -278,7 +289,19 @@
           <NumberAxis label="Population"/>
         </yAxis>
       </LineChart>
+
+      <BarChart fx:id="infectionHistogramChart" prefHeight="170" minHeight="130"
+                animated="false" legendVisible="false">
+        <xAxis>
+          <CategoryAxis label="Infection days"/>
+        </xAxis>
+        <yAxis>
+          <NumberAxis label="People"/>
+        </yAxis>
+      </BarChart>
     </VBox>
+      </content>
+    </ScrollPane>
   </right>
 
   <bottom>

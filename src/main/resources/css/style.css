@@ -64,6 +64,16 @@
     -fx-background-color: #F5F6FA;
 }
 
+.right-scroll {
+    -fx-background-color: #F5F6FA;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.right-scroll > .viewport {
+    -fx-background-color: #F5F6FA;
+}
+
 .left-panel,
 .right-panel {
     -fx-background-color: #F5F6FA;

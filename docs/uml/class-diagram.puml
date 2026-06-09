@@ -217,11 +217,19 @@ package "com.cellsimulation.stats" {
     - tick : int
     - countByState : Map<DiseaseState, Integer>
     - totalPopulation : int
+    - averageInfectionDays : double
+    - minImmunity : double
+    - maxImmunity : double
+    - infectionDaysHistogram : Map<Integer, Integer>
     --
     + getTick() : int
     + getCount(state: DiseaseState) : int
     + getTotalPopulation() : int
     + getCountByState() : Map<DiseaseState, Integer>
+    + getAverageInfectionDays() : double
+    + getMinImmunity() : double
+    + getMaxImmunity() : double
+    + getInfectionDaysHistogram() : Map<Integer, Integer>
   }
 
   SimulationListener <|.. StatisticsService

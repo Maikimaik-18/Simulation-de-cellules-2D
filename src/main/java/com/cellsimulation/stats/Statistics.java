@@ -3,6 +3,7 @@ package com.cellsimulation.stats;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.cellsimulation.model.DiseaseState;
@@ -13,11 +14,14 @@ import com.cellsimulation.model.Position;
 /**
  * Immutable snapshot of the population state at a given simulation tick.
  *
- * <p>A {@code Statistics} captures three pieces of information:
+ * <p>A {@code Statistics} captures, for a single tick:
  * <ul>
  *   <li>the tick number at which the snapshot was taken;</li>
  *   <li>the count of persons currently in each {@link DiseaseState};</li>
- *   <li>the total population (sum of the four counts).</li>
+ *   <li>the total population (sum of the four counts);</li>
+ *   <li>the average infection duration among infected persons;</li>
+ *   <li>the minimum and maximum immunity factor among living persons;</li>
+ *   <li>the distribution of infection durations among infected persons.</li>
  * </ul>
  *
  * <p>The class is intentionally immutable: once built, none of its fields can
@@ -36,6 +40,10 @@ public final class Statistics implements Serializable {
     private final int tick;
     private final Map<DiseaseState, Integer> countByState;
     private final int totalPopulation;
+    private final double averageInfectionDays;
+    private final double minImmunity;
+    private final double maxImmunity;
+    private final Map<Integer, Integer> infectionDaysHistogram;
 
     /**
      * Builds a snapshot of the given grid at the given tick.
@@ -66,6 +74,11 @@ public final class Statistics implements Serializable {
             counts.put(state, 0);
         }
         int total = 0;
+        long infectionDaysSum = 0;
+        int infectedCount = 0;
+        double minImm = Double.NaN;
+        double maxImm = Double.NaN;
+        Map<Integer, Integer> histogram = new HashMap<>();
         for (int row = 0; row < grid.getHeight(); row++) {
             for (int col = 0; col < grid.getWidth(); col++) {
                 Person occupant = grid.getCell(new Position(row, col));
@@ -75,11 +88,32 @@ public final class Statistics implements Serializable {
                 DiseaseState state = occupant.getState();
                 counts.put(state, counts.get(state) + 1);
                 total++;
+                if (state != DiseaseState.DECEASED) {
+                    double immunity = occupant.getImmunityFactor();
+                    if (Double.isNaN(minImm) || immunity < minImm) {
+                        minImm = immunity;
+                    }
+                    if (Double.isNaN(maxImm) || immunity > maxImm) {
+                        maxImm = immunity;
+                    }
+                }
+                if (state == DiseaseState.INFECTED) {
+                    int days = occupant.getInfectionDays();
+                    infectionDaysSum += days;
+                    infectedCount++;
+                    histogram.merge(days, 1, Integer::sum);
+                }
             }
         }
         this.tick = tick;
         this.countByState = Collections.unmodifiableMap(counts);
         this.totalPopulation = total;
+        this.averageInfectionDays = infectedCount == 0
+                ? 0.0
+                : (double) infectionDaysSum / infectedCount;
+        this.minImmunity = Double.isNaN(minImm) ? 0.0 : minImm;
+        this.maxImmunity = Double.isNaN(maxImm) ? 0.0 : maxImm;
+        this.infectionDaysHistogram = Collections.unmodifiableMap(histogram);
     }
 
     /**
@@ -122,5 +156,54 @@ public final class Statistics implements Serializable {
      */
     public Map<DiseaseState, Integer> getCountByState() {
         return countByState;
+    }
+
+    /**
+     * Returns the average number of infection days among the persons that are
+     * currently infected.
+     *
+     * @return the mean infection duration of infected persons, or {@code 0.0}
+     *         when no person is infected
+     */
+    public double getAverageInfectionDays() {
+        return averageInfectionDays;
+    }
+
+    /**
+     * Returns the lowest immunity factor found among the living persons
+     * (every state except {@code DECEASED}).
+     *
+     * @return the minimum immunity factor, or {@code 0.0} when no living
+     *         person is present
+     */
+    public double getMinImmunity() {
+        return minImmunity;
+    }
+
+    /**
+     * Returns the highest immunity factor found among the living persons
+     * (every state except {@code DECEASED}).
+     *
+     * @return the maximum immunity factor, or {@code 0.0} when no living
+     *         person is present
+     */
+    public double getMaxImmunity() {
+        return maxImmunity;
+    }
+
+    /**
+     * Returns the distribution of infection durations among the infected
+     * persons: each key is a number of infection days and the associated
+     * value is how many infected persons have been sick for exactly that many
+     * days.
+     *
+     * <p>The returned map is an unmodifiable view and only contains entries
+     * for durations that are actually present on the grid.
+     *
+     * @return an unmodifiable map from infection-day count to number of
+     *         infected persons
+     */
+    public Map<Integer, Integer> getInfectionDaysHistogram() {
+        return infectionDaysHistogram;
     }
 }
