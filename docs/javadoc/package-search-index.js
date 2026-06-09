@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.cellsimulation.app"},{"l":"com.cellsimulation.cli"},{"l":"com.cellsimulation.io"},{"l":"com.cellsimulation.model"},{"l":"com.cellsimulation.neighborhood"},{"l":"com.cellsimulation.stats"}];updateSearchResults();
