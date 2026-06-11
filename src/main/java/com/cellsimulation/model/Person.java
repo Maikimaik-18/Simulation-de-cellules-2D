@@ -39,6 +39,7 @@ public class Person implements Serializable {
     private int infectionDays;
     private double immunityFactor;
     private boolean vaccinated;
+    private int infectedAtTick ;
 
     /**
      * Creates a new {@code Person} with the given initial state, position
@@ -56,6 +57,7 @@ public class Person implements Serializable {
         this.infectionDays = 0;
         this.immunityFactor = immunityFactor;
         this.vaccinated = false;
+        this.infectedAtTick = -1;
     }
 
     /**
@@ -127,6 +129,20 @@ public class Person implements Serializable {
     public void setImmunityFactor(double immunityFactor) {
         this.immunityFactor = immunityFactor;
     }
+
+
+
+
+    public int getInfectedAtTick() {
+        return infectedAtTick;
+    }
+
+    public void setInfectedAtTick(int infectedAtTick) {
+        this.infectedAtTick = infectedAtTick;
+    }
+
+
+
 
     /**
      * @return {@code true} if this person has been vaccinated
@@ -253,14 +269,25 @@ public class Person implements Serializable {
      * @param settings     the simulation settings supplying the
      *                     transmission probability
      */
-    public void spread(Grid grid, NeighborhoodStrategy neighborhood, SimulationSettings settings) {
+    public void spread(Grid grid, NeighborhoodStrategy neighborhood, SimulationSettings settings,int currentTick) {
         if (state != DiseaseState.INFECTED) {
             return;
         }
+        if (infectedAtTick == currentTick) {
+            return;
+        }
+
+        System.out.println("SPREAD from " + position
+                + " state=" + state
+                + " neighborhood=" + neighborhood.getName());
 
         List<Position> neighbors = neighborhood.getNeighbors(grid, position);
+        System.out.println("INFECTED at " + position + " uses "
+                + neighborhood.getName() + " neighbors = " + neighbors);
         for (Position neighborPos : neighbors) {
             Person neighbor = grid.getCell(neighborPos);
+            System.out.println("neighbor " + neighborPos + " = "
+                    + (neighbor == null ? "empty" : neighbor.getState()));
             if (neighbor == null) {
                 continue;
             }
@@ -275,7 +302,10 @@ public class Person implements Serializable {
             if (RANDOM.nextDouble() < effectiveProb) {
                 neighbor.state = DiseaseState.INFECTED;
                 neighbor.infectionDays = 0;
+                neighbor.infectedAtTick = currentTick;
             }
         }
     }
+
+
 }

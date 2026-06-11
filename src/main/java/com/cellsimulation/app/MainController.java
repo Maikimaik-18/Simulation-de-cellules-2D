@@ -127,11 +127,76 @@ public class MainController implements SimulationListener {
     @FXML private Label mortalityValueLabel;
     @FXML private Label mobilityValueLabel;
     @FXML private Label maxDaysValueLabel;
+
+    // Slider permettant de régler l'immunité moyenne
+// de toute la population.
+//
+// Exemple :
+//
+// 0 %  -> aucune protection naturelle
+// 50 % -> population moyennement résistante
+// 80 % -> population très résistante
+//
+// Cette valeur est stockée dans
+// SimulationSettings.meanImmunity.
+//
+// Lorsqu'une nouvelle personne est créée,
+// son immunité individuelle sera générée
+// autour de cette moyenne.
     @FXML private Slider meanImmunitySlider;
+
+
+    // Label affichant la valeur actuelle
+// du slider d'immunité moyenne.
+//
+// Exemple :
+// "40 %"
+// "65 %"
+
     @FXML private Label meanImmunityValueLabel;
+
+    // Slider permettant de contrôler
+// la dispersion des immunités individuelles.
+//
+// Plus la variance est faible,
+// plus les individus se ressemblent.
+//
+// Plus la variance est élevée,
+// plus certaines personnes seront
+// très fragiles et d'autres très résistantes.
+//
+// Cette valeur est utilisée dans
+// SimulationEngine.drawImmunity().
+
     @FXML private Slider immunityVarianceSlider;
+
+
     @FXML private Label immunityVarianceValueLabel;
+
+    // Slider permettant de régler
+// l'efficacité du vaccin.
+//
+// Exemple :
+//
+// 0 %
+// -> vaccin inutile
+//
+// 50 %
+// -> protection moyenne
+//
+// 90 %
+// -> très forte protection
+//
+// Cette valeur est stockée dans
+// SimulationSettings.vaccineEfficacy.
+//
+// Lors du calcul du risque d'infection,
+// une personne vaccinée utilise cette
+// efficacité vaccinale pour augmenter
+// son immunité effective.
     @FXML private Slider vaccineEfficacySlider;
+
+
     @FXML private Label vaccineEfficacyValueLabel;
 
     @FXML private ToggleGroup brushGroup;
@@ -184,181 +249,549 @@ public class MainController implements SimulationListener {
     private XYChart.Series<Number, Number> deceasedSeries;
 
     /**
-     * Called by the JavaFX runtime after the FXML view has been loaded and
-     * every {@code fx:id}-annotated control has been injected.
+     * Méthode appelée automatiquement par JavaFX après le chargement
+     * du fichier FXML et l'injection des composants @FXML.
      *
-     * <p>Builds the default 20x20 bounded engine, attaches a fresh
-     * {@link StatisticsService} and the controller itself as listeners,
-     * primes the chart series, populates every control with its default
-     * value, creates the playback {@link Timeline} and wires the dynamic
-     * listeners (sliders, combobox, canvas click, canvas resize).
-     *
-     * <p>The order is deliberate: defaults are written to the controls
-     * <em>before</em> the slider listeners are attached, so the initial
-     * {@code setValue} calls do not echo back into {@link SimulationSettings}
-     * mutators.
+     * Son rôle est de préparer entièrement l'application avant que
+     * l'utilisateur puisse interagir avec l'interface.
      */
     @FXML
     public void initialize() {
+
+        // Création de la grille par défaut.
+        //
+        // DEFAULT_WIDTH = 20
+        // DEFAULT_HEIGHT = 20
+        // false = mode torique désactivé.
+        //
+        // On démarre donc avec une grille 20x20 bornée.
         Grid grid = new Grid(DEFAULT_WIDTH, DEFAULT_HEIGHT, false);
+
+        // Création des paramètres de simulation.
+        //
+        // Contient :
+        // - transmission
+        // - recovery
+        // - mortality
+        // - mobility
+        // - max infection days
+        // - speed
+        // - mean immunity
+        // - immunity variance
+        // - vaccine efficacy
         SimulationSettings settings = new SimulationSettings();
+
+        // Création du voisinage par défaut.
+        //
+        // Orthogonal = 4 voisins :
+        // haut, bas, gauche, droite.
         NeighborhoodStrategy neighborhood = new OrthogonalNeighborhood();
+
+        // Création du moteur principal de simulation.
+        //
+        // Le moteur centralise :
+        // - la grille
+        // - les paramètres
+        // - le voisinage
+        //
+        // C'est lui qui exécutera les ticks de simulation.
         engine = new SimulationEngine(grid, settings, neighborhood);
+
+        // Création du service de statistiques.
+        //
+        // Il enregistrera l'historique des données
+        // à chaque tick de simulation.
         statisticsService = new StatisticsService();
+
+        // Enregistrement du service de statistiques
+        // comme observateur du moteur.
+        //
+        // À chaque tick :
+        // engine.step()
+        //
+        // le moteur appellera :
+        // statisticsService.onTick(...)
         engine.addListener(statisticsService);
+
+        // Enregistrement du MainController
+        // comme observateur du moteur.
+        //
+        // "this" représente l'objet MainController courant.
+        //
+        // Grâce à :
+        // implements SimulationListener
+        //
+        // le moteur pourra appeler :
+        // onTick(...)
+        //
+        // afin de mettre à jour automatiquement l'interface.
         engine.addListener(this);
 
+        // Création des séries du graphique :
+        // Susceptible
+        // Infected
+        // Recovered
+        // Deceased
         initializeChartSeries();
+
+        // Initialisation des contrôles JavaFX
+        // avec les valeurs par défaut.
+        //
+        // Cette méthode configure :
+        // - les sliders
+        // - les labels
+        // - les champs texte
+        // - les nouveaux paramètres d'immunité
+        // - les paramètres de vaccination
         populateDefaultControls(settings);
+
+        // Création de la Timeline JavaFX.
+        //
+        // La Timeline est un minuteur qui appellera
+        // automatiquement engine.step()
+        // lorsque l'utilisateur lancera la simulation.
+        //
+        // La vitesse initiale est récupérée
+        // depuis SimulationSettings.
         initializeTimeline(settings.getSimulationSpeed());
+
+        // Branchement de tous les listeners dynamiques.
+        //
+        // Exemple :
+        // - déplacement des sliders
+        // - changement du voisinage
+        // - dessin sur le Canvas
         wireDynamicListeners();
 
+        // Adapte la taille du Canvas
+        // aux dimensions de la grille.
         resizeCanvasToGrid();
+
+        // Dessine la grille vide
+        // sur le Canvas.
         drawGrid();
+
+        // Met à jour les statistiques affichées.
+        //
+        // Au démarrage :
+        // population = 0
         updateStats();
+
+        // Met à jour la barre d'état.
+        //
+        // Exemple :
+        // Tick : 0
+        // Neighborhood : Orthogonal
+        // Grid : 20x20
         updateStatusBar();
     }
 
+    /**
+     * Initialise les séries du graphique d'évolution.
+     *
+     * Chaque série représente l'évolution d'un état
+     * de la population au cours du temps :
+     * - Susceptible
+     * - Infected
+     * - Recovered
+     * - Deceased
+     *
+     * Ces séries seront ensuite alimentées à chaque tick.
+     */
     private void initializeChartSeries() {
+
+        // Création de la série des personnes susceptibles.
         susceptibleSeries = new XYChart.Series<>();
         susceptibleSeries.setName("Susceptible");
+
+        // Création de la série des personnes infectées.
         infectedSeries = new XYChart.Series<>();
         infectedSeries.setName("Infected");
+
+        // Création de la série des personnes guéries.
         recoveredSeries = new XYChart.Series<>();
         recoveredSeries.setName("Recovered");
+
+        // Création de la série des personnes décédées.
         deceasedSeries = new XYChart.Series<>();
         deceasedSeries.setName("Deceased");
+
+        // Ajout des séries au graphique.
         evolutionChart.getData().add(susceptibleSeries);
         evolutionChart.getData().add(infectedSeries);
         evolutionChart.getData().add(recoveredSeries);
         evolutionChart.getData().add(deceasedSeries);
     }
 
+    /**
+     * Initialise tous les contrôles JavaFX avec
+     * leurs valeurs par défaut.
+     *
+     * Cette méthode synchronise l'interface graphique
+     * avec les paramètres initiaux de la simulation.
+     */
     private void populateDefaultControls(SimulationSettings settings) {
+
+        // Valeurs par défaut de la grille.
         widthField.setText(String.valueOf(DEFAULT_WIDTH));
         heightField.setText(String.valueOf(DEFAULT_HEIGHT));
+
+        // Mode torique désactivé au démarrage.
         toricCheckBox.setSelected(false);
 
+        // Remplit la ComboBox avec les différents voisinages.
         neighborhoodCombo.getItems().setAll(
                 NEIGHBORHOOD_ORTHOGONAL,
                 NEIGHBORHOOD_MOORE,
                 NEIGHBORHOOD_EUCLIDEAN,
                 NEIGHBORHOOD_MANHATTAN);
+
+        // Sélection du voisinage par défaut.
         neighborhoodCombo.setValue(NEIGHBORHOOD_ORTHOGONAL);
+
+        // Rayon par défaut pour les voisinages
+        // Euclidean et Manhattan.
         radiusField.setText("2");
+
+        // Caché tant que le voisinage ne nécessite pas de rayon.
         radiusField.setVisible(false);
-        radiusField.managedProperty().bind(radiusField.visibleProperty());
 
-        transmissionSlider.setValue(settings.getTransmissionProbability() * 100.0);
-        transmissionValueLabel.setText(formatProbability(settings.getTransmissionProbability()));
-        recoverySlider.setValue(settings.getRecoveryProbability() * 100.0);
-        recoveryValueLabel.setText(formatProbability(settings.getRecoveryProbability()));
-        mortalitySlider.setValue(settings.getMortalityProbability() * 100.0);
-        mortalityValueLabel.setText(formatProbability(settings.getMortalityProbability()));
-        mobilitySlider.setValue(settings.getMobilityRate() * 100.0);
-        mobilityValueLabel.setText(formatProbability(settings.getMobilityRate()));
-        maxDaysSlider.setValue(settings.getMaxInfectionDays());
-        maxDaysValueLabel.setText(String.valueOf(settings.getMaxInfectionDays()));
-        meanImmunitySlider.setValue(settings.getMeanImmunity() * 100.0);
-        meanImmunityValueLabel.setText(formatProbability(settings.getMeanImmunity()));
-        immunityVarianceSlider.setValue(settings.getImmunityVariance() * 100.0);
-        immunityVarianceValueLabel.setText(formatProbability(settings.getImmunityVariance()));
-        vaccineEfficacySlider.setValue(settings.getVaccineEfficacy() * 100.0);
-        vaccineEfficacyValueLabel.setText(formatProbability(settings.getVaccineEfficacy()));
-        speedSlider.setValue(settings.getSimulationSpeed());
-        speedValueLabel.setText(settings.getSimulationSpeed() + " ticks/s");
+        // Si invisible -> ne prend pas de place dans le layout.
+        radiusField.managedProperty().bind(
+                radiusField.visibleProperty());
 
+        // Synchronisation des sliders avec SimulationSettings.
+
+        transmissionSlider.setValue(
+                settings.getTransmissionProbability() * 100.0);
+        transmissionValueLabel.setText(
+                formatProbability(
+                        settings.getTransmissionProbability()));
+
+        recoverySlider.setValue(
+                settings.getRecoveryProbability() * 100.0);
+        recoveryValueLabel.setText(
+                formatProbability(
+                        settings.getRecoveryProbability()));
+
+        mortalitySlider.setValue(
+                settings.getMortalityProbability() * 100.0);
+        mortalityValueLabel.setText(
+                formatProbability(
+                        settings.getMortalityProbability()));
+
+        mobilitySlider.setValue(
+                settings.getMobilityRate() * 100.0);
+        mobilityValueLabel.setText(
+                formatProbability(
+                        settings.getMobilityRate()));
+
+        maxDaysSlider.setValue(
+                settings.getMaxInfectionDays());
+        maxDaysValueLabel.setText(
+                String.valueOf(
+                        settings.getMaxInfectionDays()));
+
+        // Nouveaux paramètres ajoutés par Maikel.
+
+        meanImmunitySlider.setValue(
+                settings.getMeanImmunity() * 100.0);
+        meanImmunityValueLabel.setText(
+                formatProbability(
+                        settings.getMeanImmunity()));
+
+        immunityVarianceSlider.setValue(
+                settings.getImmunityVariance() * 100.0);
+        immunityVarianceValueLabel.setText(
+                formatProbability(
+                        settings.getImmunityVariance()));
+
+        vaccineEfficacySlider.setValue(
+                settings.getVaccineEfficacy() * 100.0);
+        vaccineEfficacyValueLabel.setText(
+                formatProbability(
+                        settings.getVaccineEfficacy()));
+
+        // Vitesse initiale de simulation.
+        speedSlider.setValue(
+                settings.getSimulationSpeed());
+        speedValueLabel.setText(
+                settings.getSimulationSpeed() + " ticks/s");
+
+        // Le pinceau infecté est sélectionné par défaut.
         infectedBrush.setSelected(true);
+
+        // Valeurs par défaut pour les fonctionnalités
+        // de vaccination et remplissage aléatoire.
         vaccinationPercentField.setText("30");
         randomCountField.setText("50");
         randomInfectedField.setText("3");
     }
 
+    /**
+     * Initialise la Timeline JavaFX utilisée pour exécuter
+     * automatiquement la simulation lorsqu'on clique sur Play.
+     *
+     * La Timeline agit comme un minuteur :
+     * elle appelle périodiquement engine.step()
+     * à une fréquence dépendant de la vitesse choisie.
+     */
     private void initializeTimeline(int initialSpeed) {
+
+        // Sécurité :
+        // on empêche une vitesse inférieure à 1.
+        //
+        // Exemples :
+        // initialSpeed = 0  -> speed = 1
+        // initialSpeed = 5  -> speed = 5
         int speed = Math.max(1, initialSpeed);
-        timeline = new Timeline(new KeyFrame(
-                Duration.millis(1000.0 / speed),
-                e -> engine.step()));
+
+        // Création de la Timeline JavaFX.
+        timeline = new Timeline(
+
+                // Un KeyFrame représente une action
+                // exécutée à intervalle régulier.
+                new KeyFrame(
+
+                        // Calcul de l'intervalle entre deux ticks.
+                        //
+                        // speed = 1  -> 1000 ms -> 1 tick/seconde
+                        // speed = 2  -> 500 ms  -> 2 ticks/seconde
+                        // speed = 10 -> 100 ms  -> 10 ticks/seconde
+                        Duration.millis(1000.0 / speed),
+
+                        // Action exécutée à chaque déclenchement.
+                        //
+                        // e représente l'événement JavaFX.
+                        //
+                        // engine.step() fait avancer la simulation
+                        // d'un tour (tick).
+                        e -> engine.step()
+                )
+        );
+
+        // La Timeline doit se répéter indéfiniment.
+        //
+        // Sans cette ligne :
+        // engine.step() ne serait exécuté qu'une seule fois.
+        //
+        // Avec Timeline.INDEFINITE :
+        //
+        // tick 1
+        // tick 2
+        // tick 3
+        // tick 4
+        // ...
+        // jusqu'à ce que l'utilisateur clique sur Pause.
         timeline.setCycleCount(Timeline.INDEFINITE);
     }
 
+    /**
+     * Branche tous les écouteurs dynamiques
+     * de l'interface graphique.
+     *
+     * Ces listeners permettent de réagir immédiatement
+     * aux actions de l'utilisateur sans cliquer sur
+     * un bouton supplémentaire. = "Je veux surveiller les actions de l'utilisateur
+     * et réagir automatiquement lorsqu'il modifie un composant."
+     */
     private void wireDynamicListeners() {
-        speedSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            int s = Math.max(1, newVal.intValue());
-            engine.getSettings().setSimulationSpeed(s);
-            speedValueLabel.setText(s + " ticks/s");
-            timeline.stop();
-            timeline.getKeyFrames().setAll(new KeyFrame(
-                    Duration.millis(1000.0 / s),
-                    e -> engine.step()));
-            if (engine.isRunning()) {
-                timeline.play();
+
+        // Changement de vitesse de simulation.
+        //
+        // Quand le slider bouge :
+        // - SimulationSettings est mis à jour
+        // - la Timeline est reconstruite
+        // - le label est actualisé
+        speedSlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    int s = Math.max(1, newVal.intValue());
+
+                    engine.getSettings().setSimulationSpeed(s);
+
+                    speedValueLabel.setText(
+                            s + " ticks/s");
+
+                    timeline.stop();
+
+                    timeline.getKeyFrames().setAll(
+                            new KeyFrame(
+                                    Duration.millis(1000.0 / s),
+                                    e -> engine.step()));
+
+                    if (engine.isRunning()) {
+                        timeline.play();
+                    }
+                });
+
+        // Transmission.
+        transmissionSlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double prob = newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setTransmissionProbability(prob);
+
+                    transmissionValueLabel.setText(
+                            formatProbability(prob));
+                });
+
+        // Recovery.
+        recoverySlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double prob = newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setRecoveryProbability(prob);
+
+                    recoveryValueLabel.setText(
+                            formatProbability(prob));
+                });
+
+        // Mortality.
+        mortalitySlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double prob = newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setMortalityProbability(prob);
+
+                    mortalityValueLabel.setText(
+                            formatProbability(prob));
+                });
+
+        // Mobility.
+        mobilitySlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double prob = newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setMobilityRate(prob);
+
+                    mobilityValueLabel.setText(
+                            formatProbability(prob));
+                });
+
+        // Nombre maximum de jours d'infection.
+        maxDaysSlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    int days =
+                            Math.max(1, newVal.intValue());
+
+                    engine.getSettings()
+                            .setMaxInfectionDays(days);
+
+                    maxDaysValueLabel.setText(
+                            String.valueOf(days));
+                });
+
+        // Immunité moyenne.
+        meanImmunitySlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double prob =
+                            newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setMeanImmunity(prob);
+
+                    meanImmunityValueLabel.setText(
+                            formatProbability(prob));
+                });
+
+        // Variance d'immunité.
+        immunityVarianceSlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double variance =
+                            newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setImmunityVariance(variance);
+
+                    immunityVarianceValueLabel.setText(
+                            formatProbability(variance));
+                });
+
+        // Efficacité vaccinale.
+        vaccineEfficacySlider.valueProperty().addListener(
+                (obs, oldVal, newVal) -> {
+
+                    double efficacy =
+                            newVal.doubleValue() / 100.0;
+
+                    engine.getSettings()
+                            .setVaccineEfficacy(efficacy);
+
+                    vaccineEfficacyValueLabel.setText(
+                            formatProbability(efficacy));
+                });
+
+        // Changement de voisinage.
+        neighborhoodCombo.setOnAction(
+                e -> handleNeighborhoodSelection());
+
+        // Gestion du dessin sur le Canvas.
+        gridCanvas.setOnMousePressed(
+                this::handleCanvasPaint);
+
+        gridCanvas.setOnMouseDragged(
+                this::handleCanvasPaint);
+
+        // Fin du dessin.
+        gridCanvas.setOnMouseReleased(
+                e -> lastPaintedPosition = null);
+
+
+        radiusField.textProperty().addListener((obs, oldValue, newValue) -> {
+            String selected = neighborhoodCombo.getValue();
+
+            if (NEIGHBORHOOD_EUCLIDEAN.equals(selected)
+                    || NEIGHBORHOOD_MANHATTAN.equals(selected)) {
+                handleNeighborhoodSelection();
             }
         });
-
-        transmissionSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double prob = newVal.doubleValue() / 100.0;
-            engine.getSettings().setTransmissionProbability(prob);
-            transmissionValueLabel.setText(formatProbability(prob));
-        });
-        recoverySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double prob = newVal.doubleValue() / 100.0;
-            engine.getSettings().setRecoveryProbability(prob);
-            recoveryValueLabel.setText(formatProbability(prob));
-        });
-        mortalitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double prob = newVal.doubleValue() / 100.0;
-            engine.getSettings().setMortalityProbability(prob);
-            mortalityValueLabel.setText(formatProbability(prob));
-        });
-        mobilitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double prob = newVal.doubleValue() / 100.0;
-            engine.getSettings().setMobilityRate(prob);
-            mobilityValueLabel.setText(formatProbability(prob));
-        });
-        maxDaysSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            int days = Math.max(1, newVal.intValue());
-            engine.getSettings().setMaxInfectionDays(days);
-            maxDaysValueLabel.setText(String.valueOf(days));
-        });
-        meanImmunitySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double prob = newVal.doubleValue() / 100.0;
-            engine.getSettings().setMeanImmunity(prob);
-            meanImmunityValueLabel.setText(formatProbability(prob));
-        });
-        immunityVarianceSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double variance = newVal.doubleValue() / 100.0;
-            engine.getSettings().setImmunityVariance(variance);
-            immunityVarianceValueLabel.setText(formatProbability(variance));
-        });
-        vaccineEfficacySlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double efficacy = newVal.doubleValue() / 100.0;
-            engine.getSettings().setVaccineEfficacy(efficacy);
-            vaccineEfficacyValueLabel.setText(formatProbability(efficacy));
-        });
-
-        neighborhoodCombo.setOnAction(e -> handleNeighborhoodSelection());
-        gridCanvas.setOnMousePressed(this::handleCanvasPaint);
-        gridCanvas.setOnMouseDragged(this::handleCanvasPaint);
-        gridCanvas.setOnMouseReleased(e -> lastPaintedPosition = null);
     }
 
+
     /**
-     * Toolbar handler that toggles the engine between its running and paused
-     * states.
+     * Démarre ou met en pause la simulation.
      *
-     * <p>Starts (or pauses) the playback {@link Timeline} accordingly and
-     * updates the button label.
+     * <p>Cette méthode est appelée lorsque l'utilisateur clique
+     * sur le bouton Play/Pause de l'interface.
+     *
      */
+
     @FXML
     private void onPlayPause() {
+
+        // Vérifie si la simulation est actuellement en cours d'exécution
         if (engine.isRunning()) {
+
+            // Met le moteur de simulation en pause
             engine.pause();
+
+            // Arrête la génération automatique des ticks
             timeline.pause();
+
+            // Met à jour le texte du bouton
             playPauseButton.setText("Play");
+
         } else {
+
+            // Démarre le moteur de simulation
             engine.start();
+
+            // Lance la génération automatique des ticks
             timeline.play();
+
+            // Met à jour le texte du bouton
             playPauseButton.setText("Pause");
         }
     }
@@ -373,6 +806,9 @@ public class MainController implements SimulationListener {
     @FXML
     private void onStep() {
         engine.step();
+        drawGrid();
+        updateStats();
+        updateStatusBar();
     }
 
     /**
@@ -392,40 +828,97 @@ public class MainController implements SimulationListener {
         engine.reset();
     }
 
+
     /**
-     * Handler for the "Apply" button of the grid configuration section.
+     * Applique une nouvelle configuration de grille.
      *
-     * <p>Reads the width, height and toric flag from the form, builds a new
-     * {@link Grid} and rebuilds the {@link SimulationEngine} around it while
-     * preserving the current {@link SimulationSettings} and
-     * {@link NeighborhoodStrategy}. A fresh {@link StatisticsService} is
-     * attached so that the chart starts from a clean slate.
+     * <p>Cette méthode est appelée lorsque l'utilisateur clique
+     * sur le bouton "Apply" dans la section Grid.
+     *
+     * <p>Le processus est le suivant :
+     * <ol>
+     *   <li>Lecture de la largeur et de la hauteur saisies.</li>
+     *   <li>Lecture de l'état du mode torique.</li>
+     *   <li>Création d'une nouvelle grille.</li>
+     *   <li>Récupération des paramètres actuels de simulation.</li>
+     *   <li>Récupération du voisinage actuellement sélectionné.</li>
+     *   <li>Création d'un nouveau SimulationEngine utilisant la nouvelle grille.</li>
+     *   <li>Réinitialisation de l'affichage et des statistiques.</li>
+     * </ol>
+     *
+     * <p>La simulation en cours est donc remplacée par une nouvelle
+     * simulation vide utilisant la nouvelle configuration.
+     *
+     * <p>Si les dimensions saisies sont invalides, un message d'erreur
+     * est affiché à l'utilisateur.
      */
     @FXML
     private void onApplyGridConfig() {
         try {
+
+            // Récupère la largeur saisie par l'utilisateur
             int width = Integer.parseInt(widthField.getText().trim());
+
+            // Récupère la hauteur saisie par l'utilisateur
             int height = Integer.parseInt(heightField.getText().trim());
+
+            // Vérifie si le mode torique est activé
             boolean toric = toricCheckBox.isSelected();
+
+            // Création de la nouvelle grille
             Grid newGrid = new Grid(width, height, toric);
+
+            // Conserve les paramètres actuels de simulation
             SimulationSettings currentSettings = engine.getSettings();
+
+            // Conserve le voisinage actuellement sélectionné
             NeighborhoodStrategy currentNeighborhood = engine.getNeighborhood();
+
+            // Arrête la simulation en cours
             timeline.pause();
             playPauseButton.setText("Play");
-            engine = new SimulationEngine(newGrid, currentSettings, currentNeighborhood);
+
+            // Création d'un nouveau moteur utilisant la nouvelle grille
+            engine = new SimulationEngine(
+                    newGrid,
+                    currentSettings,
+                    currentNeighborhood);
+
+            // Création d'un nouveau service de statistiques
             statisticsService = new StatisticsService();
+
+            // Réenregistrement des listeners
             engine.addListener(statisticsService);
             engine.addListener(this);
+
+            // Réinitialise le graphique d'évolution
             clearChart();
+
+            // Redimensionne le canvas à la nouvelle taille
             resizeCanvasToGrid();
+
+            // Redessine la grille vide
             drawGrid();
+
+            // Met à jour les statistiques
             updateStats();
+
+            // Met à jour la barre d'état
             updateStatusBar();
-            statusLabel.setText("Grid: " + width + "x" + height
-                    + " (" + (toric ? "toric" : "bounded") + ")");
+
+            // Affiche un message de confirmation
+            statusLabel.setText(
+                    "Grid: " + width + "x" + height
+                            + " (" + (toric ? "toric" : "bounded") + ")");
+
         } catch (NumberFormatException ex) {
+
+            // Erreur de conversion des dimensions
             showError("Invalid grid dimensions: " + ex.getMessage());
+
         } catch (IllegalArgumentException ex) {
+
+            // Erreur lors de la création de la grille
             showError(ex.getMessage());
         }
     }
@@ -582,27 +1075,57 @@ public class MainController implements SimulationListener {
         }
     }
 
+
     /**
-     * Handler for the {@code File &gt; Save} menu item.
+     * Sauvegarde la simulation actuelle dans un fichier.
      *
-     * <p>Opens a {@link FileChooser} restricted to {@code *.sim} files and
-     * serializes the current engine through
-     * {@link SaveService#save(SimulationEngine, String)}.
+     * <p>Cette méthode est appelée lorsque l'utilisateur clique sur :
+     *
+     * File -> Save...
+     *
+     * <p>Le déroulement est le suivant :
+     * <ol>
+     *   <li>Ouverture d'une fenêtre de sélection de fichier.</li>
+     *   <li>Choix de l'emplacement de sauvegarde par l'utilisateur.</li>
+     *   <li>Appel du SaveService pour sauvegarder la simulation.</li>
+     *   <li>Affichage d'un message de confirmation dans la barre d'état.</li>
+     * </ol>
+     *
+     * <p>En cas d'erreur lors de la sauvegarde, un message d'erreur est affiché.
      */
     @FXML
     private void onSave() {
+
+        // Création de la fenêtre de sélection de fichier
         FileChooser chooser = new FileChooser();
+
+        // Titre affiché en haut de la fenêtre
         chooser.setTitle("Save simulation");
+
+        // Limitation aux fichiers de type .sim
         chooser.getExtensionFilters().add(
                 new ExtensionFilter("Simulation files", "*.sim"));
-        File file = chooser.showSaveDialog(playPauseButton.getScene().getWindow());
+
+        // Ouverture de la fenêtre de sauvegarde
+        File file = chooser.showSaveDialog(
+                playPauseButton.getScene().getWindow());
+
+        // Si l'utilisateur clique sur "Annuler"
         if (file == null) {
             return;
         }
+
         try {
+
+            // Délégation de la sauvegarde au SaveService
             saveService.save(engine, file.getAbsolutePath());
+
+            // Mise à jour de la barre d'état
             statusLabel.setText("Saved to " + file.getName());
+
         } catch (IOException ex) {
+
+            // Affichage d'un message d'erreur si la sauvegarde échoue
             showError("Cannot save: " + ex.getMessage());
         }
     }
