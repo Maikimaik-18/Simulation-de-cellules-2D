@@ -2,8 +2,6 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.canvas.Canvas?>
-<?import javafx.scene.chart.BarChart?>
-<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
@@ -289,16 +287,6 @@
           <NumberAxis label="Population"/>
         </yAxis>
       </LineChart>
-
-      <BarChart fx:id="infectionHistogramChart" prefHeight="170" minHeight="130"
-                animated="false" legendVisible="false">
-        <xAxis>
-          <CategoryAxis label="Infection days"/>
-        </xAxis>
-        <yAxis>
-          <NumberAxis label="People"/>
-        </yAxis>
-      </BarChart>
     </VBox>
       </content>
     </ScrollPane>
