@@ -334,6 +334,12 @@ public class MainController implements SimulationListener {
         });
 
         neighborhoodCombo.setOnAction(e -> handleNeighborhoodSelection());
+        radiusField.setOnAction(e -> handleNeighborhoodSelection());
+        radiusField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused) {
+                handleNeighborhoodSelection();
+            }
+        });
         gridCanvas.setOnMousePressed(this::handleCanvasPaint);
         gridCanvas.setOnMouseDragged(this::handleCanvasPaint);
         gridCanvas.setOnMouseReleased(e -> lastPaintedPosition = null);
