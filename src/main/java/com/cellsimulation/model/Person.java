@@ -39,6 +39,7 @@ public class Person implements Serializable {
     private int infectionDays;
     private double immunityFactor;
     private boolean vaccinated;
+    private int infectedAtTick;
 
     /**
      * Creates a new {@code Person} with the given initial state, position
@@ -56,6 +57,7 @@ public class Person implements Serializable {
         this.infectionDays = 0;
         this.immunityFactor = immunityFactor;
         this.vaccinated = false;
+        this.infectedAtTick = -1;
     }
 
     /**
@@ -252,9 +254,18 @@ public class Person implements Serializable {
      *                     candidate cells
      * @param settings     the simulation settings supplying the
      *                     transmission probability
+     * @param currentTick  the index of the tick being played; a person that
+     *                     became infected during this very tick does not
+     *                     propagate until the next one, which keeps the
+     *                     cellular-automaton update generational and the
+     *                     spread strictly limited to the chosen neighborhood
      */
-    public void spread(Grid grid, NeighborhoodStrategy neighborhood, SimulationSettings settings) {
+    public void spread(Grid grid, NeighborhoodStrategy neighborhood,
+                       SimulationSettings settings, int currentTick) {
         if (state != DiseaseState.INFECTED) {
+            return;
+        }
+        if (infectedAtTick == currentTick) {
             return;
         }
 
@@ -275,6 +286,7 @@ public class Person implements Serializable {
             if (RANDOM.nextDouble() < effectiveProb) {
                 neighbor.state = DiseaseState.INFECTED;
                 neighbor.infectionDays = 0;
+                neighbor.infectedAtTick = currentTick;
             }
         }
     }

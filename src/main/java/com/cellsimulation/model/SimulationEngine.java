@@ -116,7 +116,7 @@ public class SimulationEngine implements Serializable {
         for (Person person : snapshot) {
             person.update(settings);
             person.move(grid, neighborhood, settings);
-            person.spread(grid, neighborhood, settings);
+            person.spread(grid, neighborhood, settings, tickCount);
         }
 
         for (SimulationListener listener : new ArrayList<>(listeners)) {
