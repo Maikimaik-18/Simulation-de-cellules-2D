@@ -39,3 +39,7 @@ desktop.ini
 # ===== Java =====
 *.class
 hs_err_pid*
+
+# ===== Runtime / simulation artifacts =====
+*.log
+*.sim
